@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face{
+    font-family: 'Raleway';
+    src: url('@/assets/fonts/Raleway-VariableFont_wght.ttf') format('truetype');    
+}
+@font-face{
+    font-family: 'DancingScript';
+    src: url('@/assetsfonts/DancingScript-VariableFont_wght.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'AmaticSC-Bold';
+    src: url('@/assetsfonts/AmaticSC-Bold.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'AmaticSC-Regular';
+    src: url('@/assetsfonts/AmaticSC-Regular.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'Merriweather-Regular';
+    src: url('@/assetsfonts/Merriweather-Regular.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'Merriweather-BoldItalic';
+    src: url('@/assetsfonts/Merriweather-BoldItalic.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'Quicksand';
+    src: url('@/assetsfonts/Quick-VariableFont_wght.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Black';
+    src: url('@/assetsfonts/GothicA1-Black.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Bold';
+    src: url('@/assetsfonts/GothicA1-Bold.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-ExtraBold';
+    src: url('@/assetsfonts/GothicA1-ExtraBold.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-ExtraLight';
+    src: url('@/assetsfonts/GothicA1-ExtraLight.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Light';
+    src: url('@/assetsfonts/GothicA1-Light.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Medium';
+    src: url('@/assetsfonts/GothicA1-Medium.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Regular';
+    src: url('@/assetsfonts/GothicA1-Regular.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-SemiBold';
+    src: url('@/assetsfonts/GothicA1-SemiBold.ttf') format('truetype');
+}
+@font-face{
+    font-family: 'GothicA1-Thin';
+    src: url('@/assetsfonts/GothicA1-Thin.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Pacifico';
+    src: url('@/assets/fonts/Pacifico-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'LobsterTwo';
+    src: url('@/assets/fonts/LobsterTwo-Regular.ttf') format('truetype');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'LobsterTwo';
+    src: url('@/assets/fonts/LobsterTwo-Bold.ttf') format('truetype');
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: 'LobsterTwo';
+    src: url('@/assets/fonts/LobsterTwo-Italic.ttf') format('truetype');
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'LobsterTwo';
+    src: url('@/assets/fonts/LobsterTwo-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: itali
+}
