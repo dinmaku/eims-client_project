@@ -45,19 +45,18 @@ def add_wishlist_item(userid, event_name, event_type, event_theme, event_color, 
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("""
+        cursor.execute(""" 
             INSERT INTO wishlist (userid, event_name, event_type, event_theme, event_color, venue)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (userid, event_name, event_type, event_theme, event_color, venue))
         conn.commit()
         return True
     except Exception as e:
-        print("Error in adding wishlist item:", e)
+        print("Error in adding wishlist item:", e)  # Log specific database errors
         return False
     finally:
         cursor.close()
         conn.close()
-
 
 # Method to get wishlist items for a user
 def get_user_wishlist(userid):
@@ -101,5 +100,3 @@ def check_user_exists(userid):
     finally:
         cursor.close()
         conn.close()
-
-
