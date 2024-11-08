@@ -1,40 +1,37 @@
+#routes.py
 from flask import request, jsonify, session
-from .models import check_user, create_user, add_wishlist_item, get_user_wishlist
+from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email
 from .db import get_db_connection  # Assuming you have a function to get database connections
 import logging
+import uuid
 
 logging.basicConfig(level=logging.DEBUG)
 
 def init_routes(app):
+    
     @app.route('/login', methods=['POST'])
     def login():
-        data = request.json
-        email = data.get('email')
-        password = data.get('password')
-
-        if check_user(email, password):
-            session['user_email'] = email  # Store the email in session
-            print(f"User logged in: {email}")  # Debug statement
-            return jsonify({'message': 'Login successful!'}), 200
-        else:
-            return jsonify({'message': 'Invalid email or password.'}), 401
-
-    @app.route('/logout', methods=['GET'])
-    def logout():
-        session.pop('user_email', None)  # Clear the session
-        return jsonify({'message': 'Logged out successfully'}), 200
-
-    def get_user_id_by_email(email):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute("SELECT userid FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-            return user[0] if user else None
-        finally:
-            cursor.close()
-            conn.close()
+            data = request.json
+            email = data.get('email')
+            password = data.get('password')
+            
+            if not email or not password:
+                print("Missing email or password")
+                return jsonify({'message': 'Email and password are required!'}), 400
+            
+            if check_user(email, password):
+                session['user_email'] = email
+                return jsonify({'message': 'Login successful!'}), 200
+            else:
+                print("Invalid credentials")
+                return jsonify({'message': 'Invalid email or password.'}), 401
+
+        except Exception as e:
+            print(f"Error during login: {e}")
+            return jsonify({'message': 'An error occurred during login.'}), 500
+
+
 
     @app.route('/register', methods=['POST'])
     def register():
@@ -92,5 +89,22 @@ def init_routes(app):
         wishlist = get_user_wishlist(userid)
 
         return jsonify(wishlist), 200
+    
+    @app.before_request
+    def before_request():
+        # Optionally generate and store session_id if not already present
+        if 'session_id' not in session:
+            session['session_id'] = str(uuid.uuid4())
 
-        
+    @app.route('/check-auth', methods=['GET'])
+    def check_auth():
+        if 'user_email' in session:
+            return jsonify({'isLoggedIn': True}), 200
+        return jsonify({'isLoggedIn': False}), 200
+
+    
+    @app.route('/logout', methods=['POST'])
+    def logout():
+        session.clear()
+        return jsonify({'message': 'Logged out successfully'}), 200
+            

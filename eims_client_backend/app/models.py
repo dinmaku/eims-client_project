@@ -2,6 +2,11 @@
 
 import hashlib
 from .db import get_db_connection
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -97,6 +102,26 @@ def check_user_exists(userid):
         cursor.execute("SELECT userid FROM users WHERE userid = %s", (userid,))
         user = cursor.fetchone()
         return user is not None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_user_id_by_email(email):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT userid FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        if user:
+            return user[0]
+        else:
+            logger.warning(f"No user found with email: {email}")
+            return None
+    except Exception as e:
+        logger.error(f"Error retrieving user ID for email {email}: {str(e)}")
+        return None
     finally:
         cursor.close()
         conn.close()

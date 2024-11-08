@@ -17,7 +17,7 @@
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventType" class="text-md font-semibold text-gray-700">Choose a type of event. *</label>
             <p class="text-md text-gray-500">Select the category that best describes your event.</p>
-            <select v-model="event_type" id="eventType" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md">
+            <select v-model="event_type" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md">
               <option disabled selected value="">Pick your event here</option>
               <option value="Wedding">Wedding</option>
               <option value="Birthday">Birthday</option>
@@ -27,13 +27,13 @@
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventTheme" class="text-md font-semibold text-gray-700">Theme of your event. *</label>
             <p class="text-md text-gray-500">Define a captivating theme that sets the mood for your event.</p>
-            <input type="text" v-model="event_theme" id="eventTheme" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter theme here" required/>
+            <input type="text" v-model="event_theme" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter theme here" required/>
           </div>
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventColor" class="text-md font-semibold text-gray-700">Pick a color of your event. *</label>
             <span class="ml-1 text-md text-gray-600">(You can choose up to 3 colors)</span>
             <p class="text-md text-gray-500">Select a vibrant color palette that embodies the spirit of your event.</p>
-            <input type="text" v-model="event_color" id="eventColor" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter the color(s) here" required/>
+            <input type="text" v-model="event_color" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter the color(s) here" required/>
           </div>
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventLocation" class="text-md font-semibold text-gray-700">Where is your event taking place? *</label>
@@ -51,7 +51,7 @@
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventVenue" class="text-md font-semibold text-gray-700">Choose your Venue. *</label>
             <p class="text-md text-gray-500">Choose a venue that reflects the essence of your celebration.</p>
-            <input type="text" v-model="venue" id="eventVenue" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter your venue here" required/>
+            <input type="text" v-model="venue" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter your venue here" required/>
           </div>
           <div class="flex justify-center items-center space-x-4">
             <button class="mt-12 py-2 px-4 bg-gray-200 hover:bg-red-400 font-semibold text-gray-900 rounded-lg shadow-lg transition-transform duration-300 transform hover:scale-110">Cancel</button>
@@ -66,6 +66,9 @@
 <script>
 import axios from 'axios';
 
+// Ensure Axios is configured to send credentials with requests globally
+axios.defaults.withCredentials = true;
+
 export default {
   name: 'AddWishlist',
   data() {
@@ -75,15 +78,31 @@ export default {
           event_theme: '',
           event_color: '',
           venue: '',
-          isUserLoggedIn: true,
+          isUserLoggedIn: false, // Initialize as false until checked
       };
   },
+  mounted() {
+    // Check if the user is logged in when the component mounts
+    this.checkLoginStatus();
+  },
   methods: {
-    async submitWishlist() {
-      if (!this.isUserLoggedIn) { // Check if the user is logged in
-        alert('You must be logged in to add to the wishlist.');
-        return;
+    async checkLoginStatus() {
+      try {
+          const response = await axios.get('http://127.0.0.1:5000/check-auth', { withCredentials: true });
+          console.log('Response data:', response.data);
+          this.isUserLoggedIn = response.data.isLoggedIn;
+          console.log('Login status:', this.isUserLoggedIn);
+      } catch (error) {
+          console.error('Error checking auth status:', error);
+          this.isUserLoggedIn = false;
       }
+    },
+    async submitWishlist() {
+    await this.checkLoginStatus(); // Ensure login status is up-to-date
+    if (!this.isUserLoggedIn) {
+      alert('You must be logged in to add to the wishlist.');
+      return;
+    }
 
       const wishlistData = {
         event_name: this.event_name,
@@ -114,11 +133,6 @@ export default {
         }
       }
     },
-    mounted() {
-    // Check user login state; this could be through a store or direct check
-    this.isUserLoggedIn = !!localStorage.getItem('user'); // Adjust based on your auth implementation
-  },
-
   }
 }
 </script>

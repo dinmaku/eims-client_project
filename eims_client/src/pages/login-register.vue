@@ -66,11 +66,11 @@
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="address" class="text-left text-sm text-gray-800">Email</label>
-                <input type="text" v-model="email" id="address" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+                <input type="text" v-model="email" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="address" class="text-left text-sm text-gray-800">Your Address</label>
-                <input type="text" v-model="address" id="address" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+                <input type="text" v-model="address" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="contactNumber" class="text-left text-sm text-gray-800">Contact Number</label>
@@ -104,6 +104,9 @@
 
 <script>
 import axios from 'axios';
+
+axios.defaults.withCredentials = true;
+
 
 export default {
   name: 'LoginRegister',
