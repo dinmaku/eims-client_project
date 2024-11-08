@@ -107,7 +107,6 @@ import axios from 'axios';
 
 axios.defaults.withCredentials = true;
 
-
 export default {
   name: 'LoginRegister',
   data() {
@@ -142,27 +141,36 @@ export default {
       this.registerForm = false;
     },
     async handleLogin() {
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/login', {
-          email: this.email,
-          password: this.password,
-        });
+        try {
+          const response = await axios.post('http://127.0.0.1:5000/login', {
+            email: this.email,
+            password: this.password,
+          });
 
-        // Emit an event with login success
-        this.$emit('loginSuccess');  // Emit the event here
-        this.resetLoginForm();
-        this.closeLoginForm();
+          // Store the JWT token in localStorage (ensure it's the correct field name based on your API response)
+          localStorage.setItem('access_token', response.data.access_token); // assuming your API returns 'token'
 
-        // Redirect to /add-wishlist upon successful login
-        this.$router.push('');
-      } catch (error) {
-        if (error.response && error.response.data) {
-          this.errorMessage = error.response.data.message || 'Login failed. Please check your credentials.';
-        } else {
-          this.errorMessage = 'An error occurred. Please try again later.';
+          // Emit an event with login success
+          this.$emit('loginSuccess');
+          
+          // Reset the login form and close it
+          this.resetLoginForm();
+          this.closeLoginForm();
+
+          // Redirect to /add-wishlist or desired page after successful login
+          this.$router.push('');  // Ensure this is the correct route
+
+        } catch (error) {
+          // Handle errors during login attempt
+          if (error.response && error.response.data) {
+            this.errorMessage = error.response.data.message || 'Login failed. Please check your credentials.';
+          } else {
+            this.errorMessage = 'An error occurred. Please try again later.';
+          }
+          console.error('Login error:', error);
         }
-      }
-    },
+      },
+
     resetLoginForm() {
       this.email = '';
       this.password = '';
@@ -178,10 +186,6 @@ export default {
           address: this.address,
           contactNumber: this.contactNumber,
           password: this.registerPassword,
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
         });
 
         // Reset form and navigate to login after successful registration

@@ -72,37 +72,47 @@ axios.defaults.withCredentials = true;
 export default {
   name: 'AddWishlist',
   data() {
-      return {
-          event_name: '',
-          event_type: '',
-          event_theme: '',
-          event_color: '',
-          venue: '',
-          isUserLoggedIn: false, // Initialize as false until checked
-      };
+    return {
+      event_name: '',
+      event_type: '',
+      event_theme: '',
+      event_color: '',
+      venue: '',
+      isUserLoggedIn: false, // Track login state
+    };
   },
   mounted() {
-    // Check if the user is logged in when the component mounts
+    // Check login status when component mounts
     this.checkLoginStatus();
   },
   methods: {
-    async checkLoginStatus() {
-      try {
-          const response = await axios.get('http://127.0.0.1:5000/check-auth', { withCredentials: true });
-          console.log('Response data:', response.data);
-          this.isUserLoggedIn = response.data.isLoggedIn;
-          console.log('Login status:', this.isUserLoggedIn);
-      } catch (error) {
-          console.error('Error checking auth status:', error);
-          this.isUserLoggedIn = false;
-      }
-    },
+    checkLoginStatus() {
+          const token = localStorage.getItem('access_token');
+          console.log('Token being sent:', token);  // Ensure token is not undefined
+          if (!token) {
+            console.log('No token found');
+            return;
+          }
+
+          axios.get('http://127.0.0.1:5000/check-auth', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+          })
+          .then(response => {
+            console.log('Auth check successful:', response.data);
+          })
+          .catch(error => {
+            console.error('Error checking auth status:', error.response.data);
+          });
+        },
+
     async submitWishlist() {
-    await this.checkLoginStatus(); // Ensure login status is up-to-date
-    if (!this.isUserLoggedIn) {
-      alert('You must be logged in to add to the wishlist.');
-      return;
-    }
+      const token = localStorage.getItem('access_token'); // Get token
+      if (!token) {
+        alert('You are not logged in. Please log in to add to the wishlist.');
+        return; // User not logged in, return early
+      }
 
       const wishlistData = {
         event_name: this.event_name,
@@ -112,30 +122,41 @@ export default {
         venue: this.venue,
       };
 
-      console.log('Sending data:', wishlistData); // Check the payload
-
       try {
         const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`  // Send the JWT token
           },
-          withCredentials: true,  // Send cookies with the request
+          withCredentials: true,  // Send cookies with the request if needed
         });
-        console.log('Event added to wishlist:', response.data);
-        alert('Event added to your wishlist!');
+
+        if (response.status === 201) {
+          alert('Event added to your wishlist!');
+          this.$router.push('');
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
       } catch (error) {
         console.error('Error adding event to wishlist:', error.response?.data || error.message);
         if (error.response) {
-          console.error('Response data:', error.response.data);
-          alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
+          if (error.response.status === 401) {
+            alert('You must be logged in to add to the wishlist.');
+          } else {
+            alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
+          }
         } else {
           alert(`Error: ${error.message}`);
         }
       }
     },
-  }
-}
+  },
+};
+
 </script>
+
+
+
 
 <style scoped>
 /* Add your styles here */

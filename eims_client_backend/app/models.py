@@ -4,6 +4,7 @@ import hashlib
 from .db import get_db_connection
 import logging
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -125,3 +126,6 @@ def get_user_id_by_email(email):
     finally:
         cursor.close()
         conn.close()
+
+
+
