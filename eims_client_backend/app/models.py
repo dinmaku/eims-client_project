@@ -3,6 +3,7 @@
 import hashlib
 from .db import get_db_connection
 import logging
+from datetime import date
 
 
 logging.basicConfig(level=logging.INFO)
@@ -122,6 +123,117 @@ def get_user_id_by_email(email):
             return None
     except Exception as e:
         logger.error(f"Error retrieving user ID for email {email}: {str(e)}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+        # Outfit Model
+def create_outfit(outfit_name, outfit_type, outfit_color, outfit_desc, rent_price, status, outfit_img):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            INSERT INTO outfits (outfit_name, outfit_type, outfit_color, outfit_desc, rent_price, status, outfit_img)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (outfit_name, outfit_type, outfit_color, outfit_desc, rent_price, status, outfit_img))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Error creating outfit: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# Outfit Archive Model
+def create_outfit_archive(outfit_id, creation_address, creation_date, owner, retail_price):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            INSERT INTO outfit_archive (outfit_id, creation_address, creation_date, owner, retail_price)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (outfit_id, creation_address, creation_date, owner, retail_price))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Error creating outfit archive: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# Booked Outfit Model
+def book_outfit(userid, outfit_id, pickup_date, return_date, status, additional_charges):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            INSERT INTO booked_outfit (userid, outfit_id, pickup_date, return_date, status, additional_charges)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (userid, outfit_id, pickup_date, return_date, status, additional_charges))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Error booking outfit: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# Fetch outfits
+def get_outfits():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM outfits")
+        outfits = cursor.fetchall()
+        if outfits:
+            return [
+                {
+                    'outfit_id': item[0],
+                    'outfit_name': item[1],
+                    'outfit_type': item[2],
+                    'outfit_color': item[3],
+                    'outfit_desc': item[4],
+                    'rent_price': item[5],
+                    'status': item[6],
+                    'outfit_img': item[7],
+                }
+                for item in outfits
+            ]
+        else:
+            return []  # No outfits found
+    except Exception as e:
+        logger.error(f"Error fetching outfits: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+# Fetch a specific outfit by ID
+def get_outfit_by_id(outfit_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM outfits WHERE outfit_id = %s", (outfit_id,))
+        outfit = cursor.fetchone()
+        if outfit:
+            return {
+                'outfit_id': outfit[0],
+                'outfit_name': outfit[1],
+                'outfit_type': outfit[2],
+                'outfit_color': outfit[3],
+                'outfit_desc': outfit[4],
+                'rent_price': outfit[5],
+                'status': outfit[6],
+                'outfit_img': outfit[7],
+            }
         return None
     finally:
         cursor.close()

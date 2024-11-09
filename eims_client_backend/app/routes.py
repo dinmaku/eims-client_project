@@ -1,7 +1,7 @@
 #routes.py
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email
+from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit
 import logging
 import jwt
 from functools import wraps
@@ -142,6 +142,73 @@ def init_routes(app):
     def logout():
         # No need to clear session in JWT-based auth, just inform the client to delete the token
         return jsonify({'message': 'Logged out successfully'}), 200
+
+    @app.route('/outfits', methods=['POST'])
+    @jwt_required()
+    def add_outfit():
+        try:
+            data = request.json
+            outfit_name = data.get('outfit_name')
+            outfit_type = data.get('outfit_type')
+            outfit_color = data.get('outfit_color')
+            outfit_desc = data.get('outfit_desc')
+            rent_price = data.get('rent_price')
+            status = data.get('status')
+            outfit_img = data.get('outfit_img')
+
+            # Validate required fields
+            if not all([outfit_name, outfit_type, outfit_color, outfit_desc, rent_price, status, outfit_img]):
+                return jsonify({'message': 'All fields are required!'}), 400
+
+            # Create the new outfit
+            if create_outfit(outfit_name, outfit_type, outfit_color, outfit_desc, rent_price, status, outfit_img):
+                return jsonify({'message': 'Outfit added successfully!'}), 201
+            else:
+                return jsonify({'message': 'Error adding outfit'}), 500
+        except Exception as e:
+            return jsonify({'message': f'Error: {str(e)}'}), 500
+
+    @app.route('/outfits', methods=['GET'])
+    @jwt_required()
+    def get_all_outfits():
+        try:
+            outfits = get_outfits()
+            return jsonify(outfits), 200
+        except Exception as e:
+            return jsonify({'message': f'Error fetching outfits: {str(e)}'}), 500
+
+    @app.route('/outfits/<int:outfit_id>', methods=['GET'])
+    @jwt_required()
+    def get_outfit(outfit_id):
+        try:
+            outfit = get_outfit_by_id(outfit_id)
+            if outfit:
+                return jsonify(outfit), 200
+            else:
+                return jsonify({'message': 'Outfit not found'}), 404
+        except Exception as e:
+            return jsonify({'message': f'Error fetching outfit: {str(e)}'}), 500
+
+    @app.route('/book-outfit', methods=['POST'])
+    @jwt_required()
+    def book_outfit_route():
+        try:
+            email = get_jwt_identity()
+            userid = get_user_id_by_email(email)  # Assuming this function exists
+
+            data = request.json
+            outfit_id = data.get('outfit_id')
+            pickup_date = data.get('pickup_date')
+            return_date = data.get('return_date')
+            status = data.get('status')
+            additional_charges = data.get('additional_charges', 0)
+
+            if book_outfit(userid, outfit_id, pickup_date, return_date, status, additional_charges):
+                return jsonify({'message': 'Outfit booked successfully!'}), 201
+            else:
+                return jsonify({'message': 'Error booking outfit'}), 500
+        except Exception as e:
+            return jsonify({'message': f'Error booking outfit: {str(e)}'}), 500
     
 
 

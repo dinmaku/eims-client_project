@@ -60,6 +60,23 @@
         </div>
       </div>
     </form>
+
+    <div v-if="showAlert" class="fixed inset-x-0 top-1/3 mx-auto max-w-md bg-green-100 border border-green-400 text-green-700 px-4 py-5 rounded shadow-lg transform transition-all duration-500 ease-in-out" role="alert">
+    <div class="flex items-center">
+      <div class = "text-3xl font-bold ml-1 rounded-full bg-gray-200 px-2">
+        &check;
+      </div>
+      <div>
+        <div class = "flex flex-col ml-5">
+        <strong class="font-bold">Success!</strong>
+        <span class="block sm:inline">Event successfully added to your wishlist!</span>
+      </div>
+      </div>
+    </div>
+  </div>
+
+
+
   </div>
 </template>
 
@@ -79,6 +96,7 @@ export default {
       event_color: '',
       venue: '',
       isUserLoggedIn: false, // Track login state
+      showAlert: false, // Show success alert
     };
   },
   mounted() {
@@ -132,11 +150,13 @@ export default {
         });
 
         if (response.status === 201) {
-          alert('Event added to your wishlist!');
-          this.$router.push('');
-        } else {
-          alert('Something went wrong. Please try again.');
-        }
+            this.displayWishlistAlert(); // Display success alert
+            setTimeout(() => {
+              this.$router.push('/'); // Navigate to '/'
+            }, 3000); // Adjust the delay as needed (e.g., 3 seconds to match alert auto-close)
+          } else {
+            alert('Something went wrong. Please try again.');
+          }
       } catch (error) {
         console.error('Error adding event to wishlist:', error.response?.data || error.message);
         if (error.response) {
@@ -149,6 +169,13 @@ export default {
           alert(`Error: ${error.message}`);
         }
       }
+    },
+
+    displayWishlistAlert() {
+      this.showAlert = true;
+      setTimeout(() => {
+        this.showAlert = false;
+      }, 3000); // Auto-hide after 3 seconds
     },
   },
 };

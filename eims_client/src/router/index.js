@@ -3,6 +3,8 @@ import ClientNavigation from '../components/navigation.vue';
 import Home from '../pages/home.vue'
 import Wishlist from  '../pages/add-wishlist.vue';
 import LoginRegister from '../pages/login-register.vue';
+import PackageDeal from '../pages/package-deal.vue';
+import AttireCatalog from '../pages/attire-catalog.vue';
 
 const routes = [
   {
@@ -27,6 +29,22 @@ const routes = [
         component: LoginRegister,
         meta: {
           title: 'Login',
+        },
+      },
+      {
+        path: 'package-deal',
+        name: 'Package Deal',
+        component: PackageDeal,
+        meta: {
+          title: 'Packages',
+        },
+      },
+      {
+        path: 'attire-catalog',
+        name: 'Attire Catalog',
+        component: AttireCatalog,
+        meta: {
+          title: 'Packages',
         },
       },
     ],

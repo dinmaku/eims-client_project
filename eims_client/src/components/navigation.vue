@@ -19,14 +19,24 @@
           <li>
             <a href="/" class="block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-yellow-400 md:p-0 dark:text-white md:dark:text-blue-500" aria-current="page">Home</a>
           </li>
+          <li class="relative">
+            <a href="#" @click.prevent="toggleServices" class="block py-2 px-3 text-gray-100 rounded hover:text-gray-200 md:border-0 md:p-0 dark:text-gray-600 dark:hover:text-gray-200">Services</a>
+              <!-- Dropdown Menu -->
+              <div v-if="isDropdownVisible" class="absolute right-[-90px] z-10 mt-5 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div class="py-1 text-left" role="none">
+    
+                <a href="/package-deal" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200">Package Deals</a>
+
+                <a href="/attire-catalog" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200">Attire Rentals</a>
+              </div>
+              </div>
+            </li>
+
           <li>
-            <a href="#" class="block py-2 px-3 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-black md:p-0 dark:text-gray-600 md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Services</a>
+            <a href="#" class="block py-2 px-3 text-gray-100 rounded hover:text-gray-300 md:border-0 md:p-0 dark:text-white dark:hover:text-gray-200">About</a>
           </li>
           <li>
-            <a href="#" class="block py-2 px-3 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-black md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">About</a>
-          </li>
-          <li>
-            <a href="#" class="block py-2 px-3 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-black md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Contact</a>
+            <a href="#" class="block py-2 px-3 text-gray-100 rounded hover:text-gray-300 md:border-0 md:p-0 dark:text-white dark:hover:text-gray-200">Contact</a>
           </li>
 
           <!-- Conditionally render based on login status -->
@@ -94,12 +104,13 @@ export default {
       isNavbarOpen: false,
       loggedIn:localStorage.getItem('loggedIn') === 'true',
       showDropDown: false,
+      isDropdownVisible: false,
     };
   },
   computed: {
     navClass() {
       const route = this.$route.path;
-      return this.isScrolled || route === '/add-wishlist' ? 'bg-black bg-opacity-50' : 'bg-transparent';
+      return this.isScrolled || route === '/add-wishlist' ? 'bg-black bg-opacity-50' : 'bg-transparent' || route === '/package-deal' ? 'bg-black bg-opacity-20' : 'bg-transparent';
     },
   },
   mounted() {
@@ -137,6 +148,9 @@ export default {
       this.showDropDown = false; // Close dropdown
       this.$router.push('/'); // Optionally redirect to home or login page
       },
+      toggleServices() {
+      this.isDropdownVisible = !this.isDropdownVisible;
+    },
   },
 };
 </script>
