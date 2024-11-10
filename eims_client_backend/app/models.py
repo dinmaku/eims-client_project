@@ -203,6 +203,8 @@ def get_outfits():
                     'rent_price': item[5],
                     'status': item[6],
                     'outfit_img': item[7],
+                    'size': item[8],
+                    'weight': item[9],
                 }
                 for item in outfits
             ]
