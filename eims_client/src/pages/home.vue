@@ -466,65 +466,7 @@
 </section>
 
 
-  <section class="w-full h-[500px] bg-gray-50">
-    <div class="w-full h-[500px] bg-gray-700">
-      <div class = "flex justify-between m-5">
-         <div class = "flex flex-col my-5 space-y-2">
-            <p class ="text-md font-medium font-poppins text-gray-300">Contact Us</p>
-            <span class = "text-md md:text-2xl font-semibold text-white font-poppins indent-5">09123456781</span>
-            <span class = "text-md md:text-2xl font-semibold text-white font-poppins indent-5">225-0665</span>
-         </div>
-        <div class = "flex flex-col text-center my-5 space-y-2">
-          <p class ="text-md font-medium font-poppins text-gray-300">Email us for support</p>
-          <span class ="text-md md:text-2xl font-medium font-raleway text-yellow-300 ml-3">redcarpet.events@gmail.com</span>
-      </div>
-         <div class = "flex flex-col text-center my-5 space-y-2 mx-7">
-        <p class ="text-md font-medium font-poppins text-gray-300">Follow us on</p>
-        <div class = "flex items-center space-x-2">
-            <a href="#" class = "text-xl font-semibold text-white font-poppins"><img src="/img/facebook.png" alt="facebook-logo" class="h-6 w-6 md:h-8 md:w-8 transition-transform duration-300 transform hover:scale-110"></a>
-            <a href="#" class = "text-xl font-semibold text-white font-poppins"><img src="/img/instagram-black.png" alt="instagram-logo" class="h-6 w-6 md:h-8 md:w-8 transition-transform duration-300 transform hover:scale-110"></a>
-            <a href="#" class = "text-xl font-semibold text-white font-poppins"><img src="/img/twitter.png" alt="twitter-logo" class="h-6 w-6 md:h-8 md:w-8 transition-transform duration-300 transform hover:scale-110"></a>
-            <a href="#" class = "text-xl font-semibold text-white font-poppins"><img src="/img/linkedin.png" alt="twitter-logo" class="h-6 w-6 md:h-8 md:w-8 transition-transform duration-300 transform hover:scale-110"></a>
-          </div>  
-        </div>
-       
-        
-      </div>
-      <hr class="border-t border-gray-300 my-8 w-[90%] mx-auto" />
-
-      <div class="flex justify-between m-5 mx-7">
-    <div class="flex flex-col my-5">
-        <h1 class="text-5xl font-semibold text-gray-50 font-dancing mb-5">RedCarpet</h1>
-        <p class="text-start text-sm md:text-md font-medium text-gray-200 font-raleway">
-            "From all of us, we believe every occasion deserves to be extraordinary. 
-           <p class ="text-start text-sm md:text-md font-medium text-gray-200 font-raleway"> We appreciate your trust in us to make your events remarkable and </p>
-           <p class ="text-start text-sm md:text-md font-medium text-gray-200 font-raleway"> look forward to bringing even more brilliance to your future celebrations."</p>
-        </p>
-    </div>
-    <div class="flex flex-col text-center space-y-5 ml-5">
-      <p class = "text-md font-medium font-poppins text-gray-300 ml">Explore</p>
-      <ul class ="font-semibold text-lg text-center text-gray-50 space-y-1">
-        <li class="transition-transform duration-300 transform hover:scale-105 hover:underline" ><a href="">About Us</a></li>
-        <li class="transition-transform duration-300 transform hover:scale-105 hover:underline" ><a href="">OurTeam</a></li>
-        <li class="transition-transform duration-300 transform hover:scale-105 hover:underline" ><a href="">Gallery</a></li>
-      </ul>
-    </div>
-
-    <div class="flex flex-col items-end space-y-3 mt-10 mx-4 md:mt-20 md:mx-7">
-      <p class="font-semibold font-poppins text-gray-200 text-center md:text-right">
-        &copy; 2024 Red Carpet Services. All rights reserved.
-      </p>
-      <p class="font-semibold font-poppins text-gray-200 text-center md:text-right">
-        @MSU, Naawan
-      </p>
-    </div>
-
-</div>
-
-    </div>
-    
-  </section>
-
+  
   
 
 

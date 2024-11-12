@@ -12,6 +12,9 @@ def create_app():
 
     # Set up the Flask-JWT-Extended configuration
     app.config['JWT_SECRET_KEY'] = os.getenv('eims', 'fallback_jwt_secret')  # Ensure you set a JWT secret key
+    
+     # Set JWT token expiration to 'False' to make it never expire
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Disable token expiration
 
     # Initialize JWT manager
     jwt = JWTManager(app)

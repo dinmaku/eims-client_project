@@ -140,7 +140,7 @@ def init_routes(app):
 
     @app.route('/logout', methods=['POST'])
     def logout():
-        # No need to clear session in JWT-based auth, just inform the client to delete the token
+       
         return jsonify({'message': 'Logged out successfully'}), 200
 
     @app.route('/outfits', methods=['POST'])

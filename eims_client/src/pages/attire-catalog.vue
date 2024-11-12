@@ -16,7 +16,7 @@
             <option value="popular">Most Popular</option>
           </select>
 
-          <p class="text-gray-50 italic">46 <span>results</span></p>
+          <p class="text-gray-50 italic">{{ outfitsLength }} <span>results</span></p>
         </div>
 
         <!-- Outfit grid container -->
@@ -42,30 +42,38 @@
           </div>
 
           <!--Modal for Gown booking-->
-          <div v-if="showGownDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[90%] md:max-w-[800px] h-auto md:h-[750px] overflow-y-auto">
-                <button @click="closeModal" class="text-gray-500 text-3xl float-right">&times;</button>
-                <div class ="flex flow-row ml-5 mt-10 space-x-5">
-                  <img :src="selectedOutfit.outfit_img" alt="Outfit Image" class="h-48 md:h-[25em] w-[350px] bg-gray-200 shadow-md rounded-lg" />
-                   <div class = "flex flex-col">
-                  <p class="text-gray-900 font-gothic font-semibold text-lg mb-2">Price: <span class = "font-medium text-yellow-800">₱ {{ selectedOutfit.rent_price }}</span></p>
-                  <h3 class="text-2xl font-raleway font-medium text-gray-600">{{ selectedOutfit.outfit_name }}</h3>
-                  <p class ="mt-3 ">Color:  <span class ="font-semibold">{{ selectedOutfit.outfit_color }} </span></p>
-                  <p class ="mt-1 ">Size:  <span class ="font-semibold">{{ selectedOutfit.size }} </span></p>
-                  <p class ="mt-1 ">Weight:  <span class ="font-semibold">{{ selectedOutfit.weight }} </span></p>
-                  <p class ="mt-1 ">Category:  <span class ="font-semibold">{{ selectedOutfit.outfit_type }} </span></p>
-                   <p class = "mt-3 text-sm italic text-gray-500">*** This item is available for purchase. Feel free to message us on our Facebook page to inquire about the price of this gown, 
-                    or alternatively, you can reach us via email through our Contact Page.</p>
-                    <button @click="displayBookForm" class = "mt-16 font-medium py-2 font-raleway text-sm mt-2 p-1 cursor-pointer text-gray-900 bg-blue-400 rounded-md shadow-lg hover:text-black hover:bg-blue-500">Book now</button>
+          <div v-if="showGownDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[90%] md:max-w-[800px] h-auto md:h-[750px]">
+              <button @click="closeModal" class="text-gray-500 text-3xl float-right">&times;</button>
+              <div class="flex flex-col md:flex-row ml-5 mt-10 space-x-5">
+                <!-- Image Section -->
+                <img :src="selectedOutfit.outfit_img" alt="Outfit Image" class="h-48 md:h-[25em] w-[350px] bg-gray-200 shadow-md rounded-lg" />
+                
+                <!-- Outfit Details Section -->
+                  <div class="flex flex-col mt-5 md:mt-0">
+                      <p class="text-gray-900 font-gothic font-semibold text-lg mb-2">Price: <span class="font-medium text-yellow-800">₱ {{ selectedOutfit.rent_price }}</span></p>
+                      <h3 class="text-2xl font-raleway font-medium text-gray-600">{{ selectedOutfit.outfit_name }}</h3>
+                      <p class="mt-3">Color: <span class="font-semibold">{{ selectedOutfit.outfit_color }}</span></p>
+                      <p class="mt-1">Size: <span class="font-semibold">{{ selectedOutfit.size }}</span></p>
+                      <p class="mt-1">Weight: <span class="font-semibold">{{ selectedOutfit.weight }}</span></p>
+                      <p class="mt-1">Category: <span class="font-semibold">{{ selectedOutfit.outfit_type }}</span></p>
+                      <p class="mt-3 text-sm italic text-gray-500">
+                        *** This item is available for purchase. Feel free to message us on our Facebook page to inquire about the price of this gown,
+                        or alternatively, you can reach us via email through our Contact Page.
+                      </p>
+                      <button @click="displayBookForm" class="mt-16 font-medium py-2 text-sm p-1 cursor-pointer text-gray-900 bg-blue-400 rounded-md shadow-lg hover:text-black hover:bg-blue-500">
+                        Book now
+                      </button>
+                    </div>
+                  </div>
+
+                <!-- Description Section -->
+                <div class="ml-5 mt-7 flex-col space-y-3">
+                  <p class="font-medium">Description:</p>
+                  <p class="text-gray-700 text-lg">{{ selectedOutfit.outfit_desc }}</p>
                 </div>
-             
               </div>
-                 <div class = "ml-5 mt-7 flex-col space-y-3">
-                <p class = "font-medium">Description:</p>
-                 <p class ="text-gray-700 text-lg">{{ selectedOutfit.outfit_desc }}</p>
-               </div>
-              </div>
-            </div>
+             </div>
 
             <div v-if="bookForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[90%] md:max-w-[400px] h-auto md:h-[300px] overflow-y-auto">
@@ -81,16 +89,8 @@
                     <button @click="bookOutfit" class="bg-blue-600 p-1 px-2 rounded-lg shadow-lg text-lg text-gray-50 hover:bg-blue-500">Confirm Booking</button>
                   </div>
                 </div>
-                </div>
-                </div>
-
-
-
-
-
-
-
-
+            </div>
+          </div>
       </div>
     </div>
   </div>
@@ -184,7 +184,14 @@ export default {
                   alert('There was an error booking the outfit. Please try again.');
                 });
             },
-  }
+
+  },
+  computed: {
+   
+   outfitsLength() {
+     return this.outfits.length;
+   },
+ },
 };
 </script>
 

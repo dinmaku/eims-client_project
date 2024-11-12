@@ -9,11 +9,14 @@ import AttireCatalog from '../pages/attire-catalog.vue';
 const routes = [
   {
     path: '/',
-    component: ClientNavigation, // Assuming you want the navigation for the root
+    component: ClientNavigation, 
     children: [
       {
         path: '',
-        component: Home, // This will be displayed at '/'
+        component: Home, 
+        meta: {
+          title: 'Welcome to RedCarpet',
+        },
       },
       {
         path: 'add-wishlist',

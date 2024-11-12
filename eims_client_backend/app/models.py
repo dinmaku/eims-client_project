@@ -59,13 +59,13 @@ def add_wishlist_item(userid, event_name, event_type, event_theme, event_color, 
         conn.commit()
         return True
     except Exception as e:
-        print("Error in adding wishlist item:", e)  # Log specific database errors
+        print("Error in adding wishlist item:", e)  
         return False
     finally:
         cursor.close()
         conn.close()
 
-# Method to get wishlist items for a user
+
 def get_user_wishlist(userid):
     conn = get_db_connection()
     cursor = conn.cursor()

@@ -136,6 +136,13 @@ export default {
     },
     showRegisterForm() {
       this.registerForm = true;
+      this.loginForm = false;
+    },
+    closeRegisterForm()
+    {
+      this.registerForm = false;
+      this.resetRegisterForm();
+      this.$emit('close');
     },
     showLoginForm() {
       this.registerForm = false;
