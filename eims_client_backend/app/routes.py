@@ -1,7 +1,7 @@
 #routes.py
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit
+from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, add_event_entry, get_booked_outfits_by_user
 import logging
 import jwt
 from functools import wraps
@@ -81,10 +81,24 @@ def init_routes(app):
         if not all([event_name, event_type, event_theme, event_color, venue]):
             return jsonify({'message': 'All fields are required!'}), 400
 
-        if add_wishlist_item(userid, event_name, event_type, event_theme, event_color, venue):
-            return jsonify({'message': 'Wishlist item added successfully'}), 201
+        # Add the wishlist item and get its ID
+        wishlist_id = add_wishlist_item(userid, event_name, event_type, event_theme, event_color, venue)
+
+        if wishlist_id:
+            # Prepare data for the events table
+            schedule = data.get('schedule', 'TBD')  # Default if not provided
+            start_time = data.get('start_time', '00:00:00')  # Default if not provided
+            end_time = data.get('end_time', '00:00:00')  # Default if not provided
+            status = data.get('status', 'Pending')  # Default if not provided
+
+            # Insert the corresponding data into the events table
+            if add_event_entry(wishlist_id, schedule, start_time, end_time, status):
+                return jsonify({'message': 'Wishlist item and event added successfully'}), 201
+            else:
+                return jsonify({'message': 'Error adding event to events table'}), 500
         else:
             return jsonify({'message': 'Error adding wishlist item'}), 500
+
 
     @app.route('/wishlist', methods=['GET'])
     @jwt_required()
@@ -209,6 +223,52 @@ def init_routes(app):
                 return jsonify({'message': 'Error booking outfit'}), 500
         except Exception as e:
             return jsonify({'message': f'Error booking outfit: {str(e)}'}), 500
+
+      
+    @app.route('/booked-wishlist', methods=['GET'])
+    @jwt_required()
+    def get_user_booked_wishlist():
+        try:
+            email = get_jwt_identity()
+            userid = get_user_id_by_email(email)  # Assuming a function to get user ID by email exists
+
+            wishlists = get_booked_wishlist_by_user(userid)
+            return jsonify(wishlists), 200
+        except Exception as e:
+            return jsonify({'message': f'Error fetching booked wishlist: {str(e)}'}), 500
+        
+
+    @app.route('/booked_wishlist/<int:wishlist_id>', methods=['DELETE'])
+    @jwt_required()  # Assuming you're using JWT for authorization
+    def delete_wishlist_item(wishlist_id):
+        try:
+            # Call the function to delete the wishlist item
+            if delete_booked_wishlist(wishlist_id):
+                return jsonify({"message": "Wishlist item deleted successfully"}), 200
+            else:
+                return jsonify({"message": "Failed to delete wishlist item"}), 500
+        except Exception as e:
+            return jsonify({"message": f"Error: {str(e)}"}), 500
+
+    @app.route('/booked-outfits', methods=['GET'])
+    @jwt_required()
+    def get_user_booked_outfits():
+        try:
+            # Fetch the current user's email from the JWT token
+            email = get_jwt_identity()
+            
+            # Here, you would fetch the user's ID based on their email (you can create a helper function for this)
+            # Assuming you have a function to get the user ID from email
+            userid = get_user_id_by_email(email)
+            
+            # Fetch the booked outfits for the user
+            booked_outfits = get_booked_outfits_by_user(userid)
+            
+            # Return the fetched data as JSON
+            return jsonify(booked_outfits), 200
+        except Exception as e:
+            # If there's an error, return a message with the error details
+            return jsonify({'message': f'Error fetching booked outfits: {str(e)}'}), 500
     
 
 

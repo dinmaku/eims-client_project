@@ -51,10 +51,16 @@
           <div class="ml-3 mt-10 space-y-3">
             <label for="eventVenue" class="text-md font-semibold text-gray-700">Choose your Venue. *</label>
             <p class="text-md text-gray-500">Choose a venue that reflects the essence of your celebration.</p>
-            <input type="text" v-model="venue" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md" placeholder="Enter your venue here" required/>
+            <select v-model="venue" class="w-full sm:w-9/12 h-12 rounded-lg font-medium shadow-md">
+              <option disabled selected value="">Enter your venue here</option>
+              <option value="Mahogany Hills">Mahogany Hills</option>
+              <option value="The Balcony">The Balcony</option>
+              <option value="Frostybites">Frostybites</option>
+              <option value="Sea La Vie">Sea La Vie</option>
+            </select>   
           </div>
           <div class="flex justify-center items-center space-x-4">
-            <button class="mt-12 py-2 px-4 bg-gray-200 hover:bg-red-400 font-semibold text-gray-900 rounded-lg shadow-lg transition-transform duration-300 transform hover:scale-110">Cancel</button>
+            <button @click = "cancelSubmitWishlist" class="mt-12 py-2 px-4 bg-gray-200 hover:bg-red-400 font-semibold text-gray-900 rounded-lg shadow-lg transition-transform duration-300 transform hover:scale-110">Cancel</button>
             <button type="submit" class="mt-12 py-2 px-4 bg-blue-300 hover:bg-blue-400 font-semibold text-gray-900 rounded-lg shadow-lg transition-transform duration-300 transform hover:scale-110">Confirm</button>
           </div>
         </div>
@@ -125,51 +131,58 @@ export default {
           });
         },
 
-    async submitWishlist() {
-      const token = localStorage.getItem('access_token'); // Get token
-      if (!token) {
-        alert('You are not logged in. Please log in to add to the wishlist.');
-        return; // User not logged in, return early
-      }
+        async submitWishlist() {
+              const token = localStorage.getItem('access_token'); // Get token
+              if (!token) {
+                  alert('You are not logged in. Please log in to add to the wishlist.');
+                  return; // User not logged in, return early
+              }
 
-      const wishlistData = {
-        event_name: this.event_name,
-        event_type: this.event_type,
-        event_theme: this.event_theme,
-        event_color: this.event_color,
-        venue: this.venue,
-      };
+              // Prepare the data object with only client-entered values
+              const wishlistData = {
+                  event_name: this.event_name,
+                  event_type: this.event_type,
+                  event_theme: this.event_theme,
+                  event_color: this.event_color,
+                  venue: this.venue,
+                  // Do not include the attributes meant for the admin side
+                  schedule: null, // Schedule left as null
+                  start_time: null, // Start time left as null
+                  end_time: null, // End time left as null
+                  status: null // Status left as null
+              };
 
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`  // Send the JWT token
+              try {
+                  const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}` // Send the JWT token
+                      },
+                      withCredentials: true, // Send cookies with the request if needed
+                  });
+
+                  if (response.status === 201) {
+                      window.scrollTo(0, 0); // Scroll to the top of the page
+                      this.displayWishlistAlert(); // Display success alert
+                      setTimeout(() => {
+                          this.$router.push('/booked-services'); // Navigate to '/booked-services'
+                      }, 3000); // Adjust the delay as needed
+                  } else {
+                      alert('Something went wrong. Please try again.');
+                  }
+              } catch (error) {
+                  console.error('Error adding event to wishlist:', error.response?.data || error.message);
+                  if (error.response) {
+                      if (error.response.status === 401) {
+                          alert('You must be logged in to add to the wishlist.');
+                      } else {
+                          alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
+                      }
+                  } else {
+                      alert(`Error: ${error.message}`);
+                  }
+              }
           },
-          withCredentials: true,  // Send cookies with the request if needed
-        });
-
-        if (response.status === 201) {
-            this.displayWishlistAlert(); // Display success alert
-            setTimeout(() => {
-              this.$router.push('/'); // Navigate to '/'
-            }, 3000); // Adjust the delay as needed (e.g., 3 seconds to match alert auto-close)
-          } else {
-            alert('Something went wrong. Please try again.');
-          }
-      } catch (error) {
-        console.error('Error adding event to wishlist:', error.response?.data || error.message);
-        if (error.response) {
-          if (error.response.status === 401) {
-            alert('You must be logged in to add to the wishlist.');
-          } else {
-            alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
-          }
-        } else {
-          alert(`Error: ${error.message}`);
-        }
-      }
-    },
 
     displayWishlistAlert() {
       this.showAlert = true;
@@ -177,6 +190,10 @@ export default {
         this.showAlert = false;
       }, 3000); // Auto-hide after 3 seconds
     },
+    cancelSubmitWishlist(){
+        window.scrollTo(0, 0);
+        this.$router.push('/');
+    }, 
   },
 };
 

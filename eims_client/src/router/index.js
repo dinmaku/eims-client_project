@@ -5,6 +5,7 @@ import Wishlist from  '../pages/add-wishlist.vue';
 import LoginRegister from '../pages/login-register.vue';
 import PackageDeal from '../pages/package-deal.vue';
 import AttireCatalog from '../pages/attire-catalog.vue';
+import BookedServices from '../pages/booked_services.vue';
 
 const routes = [
   {
@@ -48,6 +49,14 @@ const routes = [
         component: AttireCatalog,
         meta: {
           title: 'Packages',
+        },
+      },
+      {
+        path: 'booked-services',
+        name: 'Booked Services',
+        component: BookedServices,
+        meta: {
+          title: 'My Bookings',
         },
       },
     ],

@@ -67,7 +67,7 @@
                 <div class="py-1 text-left" role="none">
                   <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Account settings</a>
                   <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Customer Support</a>
-                  <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">My Bookings</a>
+                  <a href="/booked-services" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">My Bookings</a>
                   <router-link to="/">
                     <button 
                       @click="handleLogout" 
@@ -86,8 +86,10 @@
       </div>
     </div>
   </nav>
-
+   
+  
   <router-view></router-view>
+
 
   <section class="w-full h-[500px] bg-gray-50">
     <div class="w-full h-[500px] bg-gray-700">
@@ -172,9 +174,13 @@ export default {
     navClass() {
         const route = this.$route.path;
         const isAttireCatalog = route === '/attire-catalog';
+        const isBookedServices = route === '/booked-services';  // Check for the /booked-services route
         const isScrolled = this.isScrolled || (isAttireCatalog && window.scrollY > 0);
 
-        return isScrolled || route === '/add-wishlist' ? 'bg-black bg-opacity-50' : 'bg-transparent';
+        // Apply bg-black if on /booked-services, otherwise check for scroll or other routes
+        return isBookedServices || isScrolled || route === '/add-wishlist'
+          ? 'bg-black bg-opacity-60'
+          : 'bg-transparent';
       }
   },
   mounted() {
@@ -207,11 +213,12 @@ export default {
       this.showDropDown = !this.showDropDown;
     },
     handleLogout() {
-      this.loggedIn = false; // Update Vue component state
-      localStorage.removeItem('loggedIn'); // Remove login status from localStorage
-      this.showDropDown = false; // Close dropdown
-      this.$router.push('/'); // Optionally redirect to home or login page
-      },
+        this.loggedIn = false; 
+        localStorage.removeItem('access_token'); 
+        localStorage.removeItem('loggedIn');
+        this.showDropDown = false; 
+        this.$router.push('/'); 
+    },
       toggleServices() {
       this.isDropdownVisible = !this.isDropdownVisible;
     },

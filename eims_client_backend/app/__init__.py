@@ -4,7 +4,7 @@ from flask_cors import CORS
 from .routes import init_routes
 import os
 from flask_jwt_extended import JWTManager
-
+00
 def create_app():
     app = Flask(__name__)
 

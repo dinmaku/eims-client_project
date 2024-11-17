@@ -1,6 +1,6 @@
 <template>
-  <div class="h-screen flex items-center justify-center bg-gray-500">
-    <div class="w-full h-full overflow-y-auto">
+  <div class="h-full flex items-center justify-center overflow-y-auto">
+    <div class="bg-gray-500 w-full h-full items-center">
       <div class="mt-32 ml-5">
         <h1 class="md:text-3xl font-raleway font-semibold text-gray-50">Gowns and Tuxedo</h1>
         <div class="flex items-center space-x-10 m-10">
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Outfit grid container -->
-        <div class="outfit-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4 w-full">
+        <div class="outfit-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4 w-full mb-20">
           <div v-for="outfit in outfits" :key="outfit.outfit_id" class="outfit-card bg-white border rounded-lg shadow-lg p-4 flex flex-col h-full cursor-pointer" @click="showModal(outfit)">
             <!-- Outfit Image -->
             <img :src="outfit.outfit_img" alt="Outfit Image" class="w-full h-60 object-cover rounded-lg mb-4" />
@@ -187,7 +187,6 @@ export default {
 
   },
   computed: {
-   
    outfitsLength() {
      return this.outfits.length;
    },

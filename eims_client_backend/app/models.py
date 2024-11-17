@@ -51,16 +51,22 @@ def create_user(first_name, last_name, email, address, contact_number, password,
 def add_wishlist_item(userid, event_name, event_type, event_theme, event_color, venue):
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
-        cursor.execute(""" 
+        cursor.execute(
+            """
             INSERT INTO wishlist (userid, event_name, event_type, event_theme, event_color, venue)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (userid, event_name, event_type, event_theme, event_color, venue))
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING wishlist_id
+            """,
+            (userid, event_name, event_type, event_theme, event_color, venue)
+        )
+        wishlist_id = cursor.fetchone()[0]  # Fetch the generated wishlist_id
         conn.commit()
-        return True
+        return wishlist_id  # Return the wishlist_id
     except Exception as e:
-        print("Error in adding wishlist item:", e)  
-        return False
+        logger.error(f"Error adding wishlist item: {e}")
+        conn.rollback()
+        return None
     finally:
         cursor.close()
         conn.close()
@@ -95,6 +101,32 @@ def get_user_wishlist(userid):
     finally:
         cursor.close()
         conn.close()
+
+
+def add_event_entry(wishlist_id, schedule, start_time, end_time, status):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO events (wishlist_id, schedule, start_time, end_time, status)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (wishlist_id, schedule, start_time, end_time, status)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        # Use logger instead of app.logger
+        logger.error(f"Error adding event: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+    
+        
 
 def check_user_exists(userid):
     conn = get_db_connection()
@@ -241,5 +273,91 @@ def get_outfit_by_id(outfit_id):
         cursor.close()
         conn.close()
 
+# Fetch wishlist by users
+def get_booked_wishlist_by_user(userid):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT wishlist_id, userid, event_name, event_type, event_theme, event_color, venue
+            FROM wishlist
+            WHERE userid = %s
+        """, (userid,))
+        wishlists = cursor.fetchall()
+        if wishlists:
+            return [
+                {
+                    'wishlist_id': item[0],
+                    'userid': item[1],
+                    'event_name': item[2],
+                    'event_type': item[3],
+                    'event_theme': item[4],
+                    'event_color': item[5],
+                    'venue': item[6]
+                }
+                for item in wishlists
+            ]
+        else:
+            return []  # No wishlists found for the user
+    except Exception as e:
+        logger.error(f"Error fetching wishlists for user {userid}: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+# Delete wishlist and related events
+def delete_booked_wishlist(wishlist_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # First, delete related events (to avoid foreign key violation)
+        cursor.execute("""DELETE FROM events WHERE wishlist_id = %s""", (wishlist_id,))
+        conn.commit()
+
+        # Then, delete the wishlist item
+        cursor.execute("""DELETE FROM wishlist WHERE wishlist_id = %s""", (wishlist_id,))
+        conn.commit()
+
+        return True
+    except Exception as e:
+        logger.error(f"Error deleting wishlist item {wishlist_id}: {e}")
+        conn.rollback()  # Rollback in case of error
+        return False
+    finally:
+        cursor.close()
+        conn.close()
 
 
+
+def get_booked_outfits():
+    conn = get_db_connection()  # Assuming you have a function to get the DB connection
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM booked_outfit")
+        booked_outfits = cursor.fetchall()
+        
+        if booked_outfits:
+            return [
+                {
+                    'outfit_booked_id': item[0],
+                    'userid': item[1],
+                    'outfit_id': item[2],
+                    'pickup_date': item[3],
+                    'return_date': item[4],
+                    'status': item[5],
+                    'additional_charges': item[6]
+                }
+                for item in booked_outfits
+            ]
+        else:
+            return []  # No booked outfits found
+    except Exception as e:
+        logger.error(f"Error fetching booked outfits: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_booked_outfits_by_user(userid):
+    booked_outfits = get_booked_outfits()
+    return [outfit for outfit in booked_outfits if outfit['userid'] == userid]
