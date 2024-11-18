@@ -6,6 +6,7 @@ import LoginRegister from '../pages/login-register.vue';
 import PackageDeal from '../pages/package-deal.vue';
 import AttireCatalog from '../pages/attire-catalog.vue';
 import BookedServices from '../pages/booked_services.vue';
+import VendorSchedule from '../pages/vendor-schedule.vue';
 
 const routes = [
   {
@@ -57,6 +58,14 @@ const routes = [
         component: BookedServices,
         meta: {
           title: 'My Bookings',
+        },
+      },
+      {
+        path: 'vendor-schedule',
+        name: 'Vendor Schedule',
+        component: VendorSchedule,
+        meta: {
+          title: 'My Schedule',
         },
       },
     ],

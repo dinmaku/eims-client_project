@@ -9,10 +9,10 @@
             <div class="flex flex-col md:flex-row m-4 md:m-20 mt-4 md:mt-10">
                 <div class="flex flex-col items-start space-y-4 mt-5 md:mt-10">
                     <button
-                        @click="setActive('event')"
+                        @click="displayEventSection"
                         :class="{
-                            'bg-gray-100 text-black shadow-lg': activeButton === 'event',
-                            'text-black': activeButton !== 'event'
+                            'bg-gray-100 text-black shadow-lg': events_navigation,
+                            'text-black': !events_navigation
                         }"
                         class="flex items-center px-3 py-2 md:px-4 md:py-1 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
@@ -21,10 +21,10 @@
                     </button>
 
                     <button
-                        @click="setActive('outfits')"
+                         @click="displayOutfitsSection"
                         :class="{
-                            'bg-gray-100 text-black shadow-lg': activeButton === 'outfits',
-                            'text-black': activeButton !== 'outfits'
+                            'bg-gray-100 text-black shadow-lg': displayOutfits,
+                            'text-black': !displayOutfits
                         }"
                         class="flex items-center px-3 py-2 md:px-4 md:py-2 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
@@ -34,23 +34,23 @@
                 </div>
 
                 <div class="flex flex-col items-center w-full mt-4 md:mt-0 md:ml-16 relative">
-                    <div v-if="events_navigation" class="absolute top-2 sm:top-1 right-2 sm:right-24 z-10 w-full md:w-auto">
-                    <div class="flex flex-wrap items-center justify-center space-x-2 md:space-x-10 bg-gray-50 px-3 md:px-5 py-2 rounded-lg shadow-lg">
+                    <div class="absolute top-2 sm:top-1 right-2 sm:right-24 z-10 w-full md:w-auto">  
+                    <div v-if="events_navigation" class="flex flex-wrap items-center justify-center space-x-2 md:space-x-10 bg-gray-50 px-3 md:px-5 py-2 rounded-lg shadow-lg">
                         <button
-                            @click="setActiveNav('wishlist')"
+                            @click="displayWishlist = !displayWishlist"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'wishlist',
-                                'text-gray-600': activeNavButton !== 'wishlist'
+                                'text-blue-600 border-b-2 border-blue-600': displayWishlist,
+                                'text-gray-600': !displayWishlist
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
                             Wishlist
                         </button>
                         <button
-                            @click="setActiveNav('events')"
+                            @click="displayEvents = !displayEvents"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'events',
-                                'text-gray-600': activeNavButton !== 'events'
+                                'text-blue-600 border-b-2 border-blue-600': displayEvents,
+                                'text-gray-600': !displayEvents
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
@@ -59,10 +59,10 @@
 
                         <!-- Completed Button -->
                         <button
-                            @click="setActiveNav('completed')"
+                           @click="displayCompleted = !displayCompleted"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'completed',
-                                'text-gray-600': activeNavButton !== 'completed'
+                                'text-blue-600 border-b-2 border-blue-600': displayCompleted,
+                                'text-gray-600': !displayCompleted
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
@@ -71,10 +71,10 @@
 
                         <!-- Rated Button -->
                         <button
-                            @click="setActiveNav('rated')"
+                            @click="displayRated = !displayRated"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'rated',
-                                'text-gray-600': activeNavButton !== 'rated'
+                                'text-blue-600 border-b-2 border-blue-600': displayRated,
+                                'text-gray-600': !displayRated
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
@@ -83,10 +83,10 @@
 
                         <!-- Canceled Button -->
                         <button
-                            @click="setActiveNav('canceled')"
+                            @click="displayAll = !displayAll"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'canceled',
-                                'text-gray-600': activeNavButton !== 'canceled'
+                                'text-blue-600 border-b-2 border-blue-600': displayAll,
+                                'text-gray-600': !displayAll
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
@@ -104,7 +104,7 @@
                         </button>
                     </div>
 
-                    <div v-if="activeNavButton === 'wishlist'" class="flex justify-center mt-5 md:mt-10">
+                    <div v-if="displayBookedWishlist" class="flex justify-center mt-5 md:mt-10">
                         <div class="bg-gray-100 p-3 md:p-5 rounded-lg shadow-md overflow-x-auto w-full">
                             <table class="min-w-full md:min-w-[700px] border-collapse">
                                 <thead>
@@ -213,10 +213,6 @@
        
 
 
-
-
-
-
     </div>
 </template>
 
@@ -227,12 +223,21 @@ import axios from 'axios';
     export default{
         data() {
         return {
-        activeButton: 'event',
-        activeNavButton: 'wishlist',
         events_navigation: true,
         selectedWishlist: null,
+
         bookedWishlistDetails: false,
         displayBookedOutfits: false,
+        
+        // booked outfits
+        displayBookedOutfits: false,
+
+        //events navigation 
+        displayBookedWishlist: true,
+        displayCompleted: false,
+        displayRated: false,
+        displayCanceled: false,
+        displayAll: false,
 
         bookedWishlist: [],
         bookedOutfits: [],
@@ -243,19 +248,23 @@ import axios from 'axios';
     this.fetchBookedOutfits();
   },
     methods: {
-        setActive(button) {
-                this.activeButton = button;
-
-                if (button === 'outfits') {
-                    this.displayBookedOutfits = true;
-                    console.log('Display booked outfits:', this.displayBookedOutfits); 
-                    this.displayBookedOutfits = false;
-                    console.log('Display booked outfits:', this.displayBookedOutfits); 
-                }
+         displayEventSection() {
+            this.displayBookedWishlist = true;
+            this.events_navigation = true;
+            this.displayBookedOutfits = false;
             },
-        setActiveNav(button) {
-            this.activeNavButton = button;
-        },
+         displayOutfitsSection() {
+            this.displayBookedWishlist = false;
+            this.events_navigation = false;
+            this.displayBookedOutfits = true;
+            },
+
+            displayWishlist()
+            {
+                this.displayBookedWishlist = true;
+            },
+        
+                
 
         async fetchBookedWishlist() {
                 try {

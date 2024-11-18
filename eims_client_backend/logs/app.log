@@ -69,3 +69,7 @@ DETAIL:  Key (wishlist_id)=(32) is still referenced from table "events".
 2024-11-17 17:20:47,624 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
 2024-11-17 17:30:38,914 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
 2024-11-17 17:30:39,796 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-19 01:01:50,653 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-19 01:01:52,915 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-19 02:21:36,528 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-19 02:21:37,126 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]

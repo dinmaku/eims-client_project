@@ -68,6 +68,7 @@
                   <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Account settings</a>
                   <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Customer Support</a>
                   <a href="/booked-services" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">My Bookings</a>
+                  <a href="/vendor-schedule" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Booked Schedules</a>
                   <router-link to="/">
                     <button 
                       @click="handleLogout" 
@@ -172,16 +173,17 @@ export default {
   },
   computed: {
     navClass() {
-        const route = this.$route.path;
-        const isAttireCatalog = route === '/attire-catalog';
-        const isBookedServices = route === '/booked-services';  // Check for the /booked-services route
-        const isScrolled = this.isScrolled || (isAttireCatalog && window.scrollY > 0);
+      const route = this.$route.path;
+      const isAttireCatalog = route === '/attire-catalog';
+      const isBookedServices = route === '/booked-services';  // Check for /booked-services route
+      const isVendorSchedule = route === '/vendor-schedule';  // Check for /vendor-schedule route
+      const isScrolled = this.isScrolled || (isAttireCatalog && window.scrollY > 0);
 
-        // Apply bg-black if on /booked-services, otherwise check for scroll or other routes
-        return isBookedServices || isScrolled || route === '/add-wishlist'
-          ? 'bg-black bg-opacity-60'
-          : 'bg-transparent';
-      }
+      // Apply bg-black if on /booked-services, /vendor-schedule, or if scrolled or on /add-wishlist
+      return isBookedServices || isVendorSchedule || isScrolled || route === '/add-wishlist'
+        ? 'bg-black bg-opacity-60'
+        : 'bg-transparent';
+    }
   },
   mounted() {
     window.addEventListener('scroll', this.handleScroll);
