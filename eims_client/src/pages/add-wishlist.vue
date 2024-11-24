@@ -132,57 +132,57 @@ export default {
         },
 
         async submitWishlist() {
-              const token = localStorage.getItem('access_token'); // Get token
-              if (!token) {
-                  alert('You are not logged in. Please log in to add to the wishlist.');
-                  return; // User not logged in, return early
-              }
+            const token = localStorage.getItem('access_token'); // Get token
+            if (!token) {
+                alert('You are not logged in. Please log in to add to the wishlist.');
+                return; // User not logged in, return early
+            }
 
-              // Prepare the data object with only client-entered values
-              const wishlistData = {
-                  event_name: this.event_name,
-                  event_type: this.event_type,
-                  event_theme: this.event_theme,
-                  event_color: this.event_color,
-                  venue: this.venue,
-                  // Do not include the attributes meant for the admin side
-                  schedule: null, // Schedule left as null
-                  start_time: null, // Start time left as null
-                  end_time: null, // End time left as null
-                  status: null // Status left as null
-              };
+            // Prepare the data object with only client-entered values
+            const wishlistData = {
+                event_name: this.event_name,
+                event_type: this.event_type,
+                event_theme: this.event_theme,
+                event_color: this.event_color,
+                venue: this.venue,
+                // Send scheduling-related fields as null (default values will be handled in the backend)
+                schedule: null, // Schedule left as null
+                start_time: null, // Start time left as null
+                end_time: null, // End time left as null
+                status: "wishlist" // Status left as null
+            };
 
-              try {
-                  const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
-                      headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}` // Send the JWT token
-                      },
-                      withCredentials: true, // Send cookies with the request if needed
-                  });
+            try {
+                const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Send the JWT token
+                    },
+                    withCredentials: true, // Send cookies with the request if needed
+                });
 
-                  if (response.status === 201) {
-                      window.scrollTo(0, 0); // Scroll to the top of the page
-                      this.displayWishlistAlert(); // Display success alert
-                      setTimeout(() => {
-                          this.$router.push('/booked-services'); // Navigate to '/booked-services'
-                      }, 3000); // Adjust the delay as needed
-                  } else {
-                      alert('Something went wrong. Please try again.');
-                  }
-              } catch (error) {
-                  console.error('Error adding event to wishlist:', error.response?.data || error.message);
-                  if (error.response) {
-                      if (error.response.status === 401) {
-                          alert('You must be logged in to add to the wishlist.');
-                      } else {
-                          alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
-                      }
-                  } else {
-                      alert(`Error: ${error.message}`);
-                  }
-              }
-          },
+                if (response.status === 201) {
+                    window.scrollTo(0, 0); // Scroll to the top of the page
+                    this.displayWishlistAlert(); // Display success alert
+                    setTimeout(() => {
+                        this.$router.push('/booked-services'); // Navigate to '/booked-services'
+                    }, 2000); // Adjust the delay as needed
+                } else {
+                    alert('Something went wrong. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error adding event to wishlist:', error.response?.data || error.message);
+                if (error.response) {
+                    if (error.response.status === 401) {
+                        alert('You must be logged in to add to the wishlist.');
+                    } else {
+                        alert(`Error: ${error.response.data.message || 'An unknown error occurred.'}`);
+                    }
+                } else {
+                    alert(`Error: ${error.message}`);
+                }
+            }
+        },
 
     displayWishlistAlert() {
       this.showAlert = true;

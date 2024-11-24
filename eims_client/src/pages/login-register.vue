@@ -69,9 +69,19 @@
                 <input type="text" v-model="email" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
-                <label for="address" class="text-left text-sm text-gray-800">Your Address</label>
-                <input type="text" v-model="address" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
-            </div>
+              <label for="country" class="text-left text-sm text-gray-800">Country</label>
+              <input type="text" v-model="country" id="country" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+          </div>
+
+          <div class="flex flex-col justify-start items-start mt-3 space-y-2">
+              <label for="city" class="text-left text-sm text-gray-800">City</label>
+              <input type="text" v-model="city" id="city" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+          </div>
+
+          <div class="flex flex-col justify-start items-start mt-3 space-y-2">
+              <label for="street" class="text-left text-sm text-gray-800">Street</label>
+              <input type="text" v-model="street" id="street" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+          </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="contactNumber" class="text-left text-sm text-gray-800">Contact Number</label>
                 <input type="text" v-model="contactNumber" id="contactNumber" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
@@ -116,7 +126,9 @@ export default {
       password: '',
       firstName: '',
       lastName: '',
-      address: '',
+      country: '',
+      city: '',
+      street: '',
       contactNumber: '',
       registerPassword: '',
       errorMessage: '',
@@ -135,9 +147,9 @@ export default {
       this.resetLoginForm();
     },
     showRegisterForm() {
-      this.registerForm = true;
-      this.loginForm = false;
-    },
+    this.$emit('update:loginForm', false); // Emit the event to update the loginForm value in the parent
+    this.registerForm = true;
+  },
     closeRegisterForm()
     {
       this.registerForm = false;
@@ -185,34 +197,50 @@ export default {
     },
 
     async handleRegister() {
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/register', {
-          firstName: this.firstName,
-          lastName: this.lastName,
-          email: this.email,
-          address: this.address,
-          contactNumber: this.contactNumber,
-          password: this.registerPassword,
-        });
+          try {
+              // Check if all fields are populated before sending the request
+              const fields = [
+                  this.firstName, this.lastName, this.email,
+                  this.contactNumber, this.registerPassword, this.country, 
+                  this.city, this.street
+              ];
+              
+              if (fields.some(field => !field)) {
+                  this.errorMessage = 'All fields are required!';
+                  return;
+              }
 
-        // Reset form and navigate to login after successful registration
-        this.resetRegisterForm();
-        this.showLoginForm();
-        alert(response.data.message);
-      } catch (error) {
-        if (error.response && error.response.data) {
-          this.errorMessage = error.response.data.message || 'Registration failed.';
-        } else {
-          this.errorMessage = 'An error occurred. Please try again later.';
-        }
-      }
-    },
+              const response = await axios.post('http://127.0.0.1:5000/register', {
+                  firstName: this.firstName,
+                  lastName: this.lastName,
+                  email: this.email,
+                  contactNumber: this.contactNumber,
+                  password: this.registerPassword,
+                  country: this.country,
+                  city: this.city,
+                  street: this.street,
+              });
+
+              // Reset form and navigate to login after successful registration
+              this.resetRegisterForm();
+              this.showLoginForm();
+              alert(response.data.message);
+          } catch (error) {
+              if (error.response && error.response.data) {
+                  this.errorMessage = error.response.data.message || 'Registration failed.';
+              } else {
+                  this.errorMessage = 'An error occurred. Please try again later.';
+              }
+          }
+      },
 
     resetRegisterForm() {
       this.firstName = '';
       this.lastName = '';
       this.email = '';
-      this.address = '';
+      this.country = '';
+      this.city = '';
+      this.street = '';
       this.contactNumber = '';
       this.registerPassword = '';
       this.errorMessage = '';

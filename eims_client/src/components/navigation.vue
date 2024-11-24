@@ -87,10 +87,8 @@
       </div>
     </div>
   </nav>
-   
-  
-  <router-view></router-view>
 
+  <router-view></router-view>
 
   <section class="w-full h-[500px] bg-gray-50">
     <div class="w-full h-[500px] bg-gray-700">
@@ -215,12 +213,11 @@ export default {
       this.showDropDown = !this.showDropDown;
     },
     handleLogout() {
-        this.loggedIn = false; 
-        localStorage.removeItem('access_token'); 
-        localStorage.removeItem('loggedIn');
-        this.showDropDown = false; 
-        this.$router.push('/'); 
-    },
+      this.loggedIn = false; // Update Vue component state
+      localStorage.removeItem('loggedIn'); // Remove login status from localStorage
+      this.showDropDown = false; // Close dropdown
+      this.$router.push('/'); // Optionally redirect to home or login page
+      },
       toggleServices() {
       this.isDropdownVisible = !this.isDropdownVisible;
     },

@@ -8,6 +8,7 @@ import AttireCatalog from '../pages/attire-catalog.vue';
 import BookedServices from '../pages/booked_services.vue';
 import VendorSchedule from '../pages/vendor-schedule.vue';
 
+
 const routes = [
   {
     path: '/',
@@ -52,6 +53,7 @@ const routes = [
           title: 'Packages',
         },
       },
+
       {
         path: 'booked-services',
         name: 'Booked Services',

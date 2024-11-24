@@ -16,7 +16,8 @@
                         }"
                         class="flex items-center px-3 py-2 md:px-4 md:py-1 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
-                        <img src="/img/booking.png" alt="Event Icon" class="h-5 w-5 md:h-7 md:w-7 mr-2" />
+                    <img src="/img/booking.png" alt="Event Icon" class="h-5 w-5 md:h-7 md:w-7 mr-2" />
+                       
                         Booked Event
                     </button>
 
@@ -28,7 +29,8 @@
                         }"
                         class="flex items-center px-3 py-2 md:px-4 md:py-2 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
-                        <img src="/img/booked-gown.png" alt="Event Icon" class="h-6 w-6 md:h-9 md:w-9 mr-2" />
+                    <img src="/img/booked-gown.png" alt="Event Icon" class="h-6 w-6 md:h-9 md:w-9 mr-2" />
+                        
                         Gown Rental
                     </button>
                 </div>
@@ -54,6 +56,7 @@
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
+                        
                             Events
                         </button>
 
@@ -201,8 +204,8 @@
                     </div>
                     <div class="mt-4 md:mt-7 flex justify-end items-center">
                         <button class="flex items-center space-x-1 px-2 py-1 rounded-lg text-red-500 hover:shadow-lg hover:text-red-700 hover:border-b-2 border-red-600"
-                                @click="deleteWishlistItem(selectedWishlist.wishlist_id)">
-                            <img src="/img/delete.png" alt="Delete Icon" class="w-4 md:w-5 h-4 md:h-5">
+                                @click="deleteWishlistItem(selectedWishlist.events_id)">
+                                <img src="/img/delete.png" alt="Delete Icon" class="w-4 md:w-5 h-4 md:h-5">
                             <span>Delete</span>
                         </button>
                     </div>
@@ -281,28 +284,31 @@ import axios from 'axios';
                 console.error('Error fetching booked wishlist:', error);
                 }
             },
-            async deleteWishlistItem(wishlist_id) {
+            async deleteWishlistItem(events_id) {
                 try {
                     const token = localStorage.getItem('access_token');  // Get JWT token from localStorage
-                    const response = await axios.delete(`http://127.0.0.1:5000/booked_wishlist/${wishlist_id}`, {
+
+                    // Send a DELETE request to the backend with the events_id
+                    const response = await axios.delete(`http://127.0.0.1:5000/booked_wishlist/${events_id}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`,  // Send the JWT token
                         }
                     });
 
                     if (response.status === 200) {
-                        // Remove the deleted item from the local wishlist array
-                        this.bookedWishlist = this.bookedWishlist.filter(item => item.wishlist_id !== wishlist_id);
-                        alert('Wishlist item deleted successfully!');
-                        this.selectedWishlist = false;
+                        // Remove the deleted item from the local wishlist array (events list)
+                        this.bookedWishlist = this.bookedWishlist.filter(item => item.events_id !== events_id);
+                        alert('Event item deleted successfully!');
+                        this.selectedWishlist = false;  // Optional: Clear the selected item if needed
                     } else {
-                        alert('Failed to delete wishlist item');
+                        alert('Failed to delete event item');
                     }
                 } catch (error) {
-                    console.error('Error deleting wishlist item:', error);
-                    alert('Error deleting wishlist item');
+                    console.error('Error deleting event item:', error);
+                    alert('Error deleting event item');
                 }
             },
+
 
             displayWishlistDetails(item) {
             this.selectedWishlist = item;

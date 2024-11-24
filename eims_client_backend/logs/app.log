@@ -1,75 +1,37 @@
-2024-11-12 23:09:23,078 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-12 23:09:23,642 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 14:34:06,718 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 14:34:07,746 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 14:40:02,071 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 14:42:34,008 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 14:42:34,599 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-15 16:02:01,550 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:06:30,966 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:06:34,787 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:46:46,327 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:46:52,940 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:46:55,898 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:46:58,645 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:47:04,554 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:56:43,421 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 01:56:44,138 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:04:08,732 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:04:09,652 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:19:51,219 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:20:02,333 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:20:06,608 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:20:20,829 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:22:25,409 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:22:26,098 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:34:33,096 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-16 02:34:35,050 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 01:15:50,301 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 01:15:50,997 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 15:39:21,196 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 15:39:22,012 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:08:25,619 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:17:48,043 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:17:48,637 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:19:30,348 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:19:40,329 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:19:46,229 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:20:00,412 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:20:18,876 ERROR: Error adding event: column "wishlist_id" is of type integer but expression is of type boolean
-LINE 3:             VALUES (true, NULL, NULL, NULL, NULL)
-                            ^
-HINT:  You will need to rewrite or cast the expression.
- [in E:\eims-client_project\eims_client_backend\app\models.py:116]
-2024-11-17 16:23:01,690 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:23:02,329 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:23:26,055 ERROR: Error adding event: column "wishlist_id" is of type integer but expression is of type boolean
-LINE 3:             VALUES (true, NULL, NULL, NULL, NULL)
-                            ^
-HINT:  You will need to rewrite or cast the expression.
- [in E:\eims-client_project\eims_client_backend\app\models.py:116]
-2024-11-17 16:25:01,251 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:25:04,360 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:25:27,655 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:25:28,492 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 16:26:42,167 ERROR: Error deleting wishlist item 32: update or delete on table "wishlist" violates foreign key constraint "events_wishlist_id_fkey" on table "events"
-DETAIL:  Key (wishlist_id)=(32) is still referenced from table "events".
- [in E:\eims-client_project\eims_client_backend\app\models.py:317]
-2024-11-17 16:26:46,741 ERROR: Error deleting wishlist item 32: update or delete on table "wishlist" violates foreign key constraint "events_wishlist_id_fkey" on table "events"
-DETAIL:  Key (wishlist_id)=(32) is still referenced from table "events".
- [in E:\eims-client_project\eims_client_backend\app\models.py:317]
-2024-11-17 16:26:54,109 ERROR: Error deleting wishlist item 32: update or delete on table "wishlist" violates foreign key constraint "events_wishlist_id_fkey" on table "events"
-DETAIL:  Key (wishlist_id)=(32) is still referenced from table "events".
- [in E:\eims-client_project\eims_client_backend\app\models.py:317]
-2024-11-17 16:26:56,430 ERROR: Error deleting wishlist item 32: update or delete on table "wishlist" violates foreign key constraint "events_wishlist_id_fkey" on table "events"
-DETAIL:  Key (wishlist_id)=(32) is still referenced from table "events".
- [in E:\eims-client_project\eims_client_backend\app\models.py:317]
-2024-11-17 16:31:40,191 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 17:20:34,139 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 17:20:47,624 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 17:30:38,914 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-17 17:30:39,796 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-19 01:01:50,653 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-19 01:01:52,915 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-19 02:21:36,528 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
-2024-11-19 02:21:37,126 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:32:57,237 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:32:57,970 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:20,651 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:26,459 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:29,268 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:30,984 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:39,853 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:43,688 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:35:46,396 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:39:38,365 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:43:53,121 ERROR: Error deleting wishlist item 1: relation "events" does not exist
+LINE 1: DELETE FROM events WHERE wishlist_id = 1
+                    ^
+ [in E:\eims-client_project\eims_client_backend\app\models.py:330]
+2024-11-22 16:44:13,820 ERROR: Error deleting wishlist item 1: relation "events" does not exist
+LINE 1: DELETE FROM events WHERE wishlist_id = 1
+                    ^
+ [in E:\eims-client_project\eims_client_backend\app\models.py:330]
+2024-11-22 16:57:23,827 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:57:24,808 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 16:57:54,916 ERROR: Error fetching wishlists for user 1: relation "wishlist" does not exist
+LINE 3:             FROM wishlist
+                         ^
+ [in E:\eims-client_project\eims_client_backend\app\models.py:310]
+2024-11-22 16:57:55,132 ERROR: Error fetching wishlists for user 1: relation "wishlist" does not exist
+LINE 3:             FROM wishlist
+                         ^
+ [in E:\eims-client_project\eims_client_backend\app\models.py:310]
+2024-11-22 17:02:14,510 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 17:02:25,037 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 17:04:11,009 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-22 17:04:11,549 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-24 16:58:50,016 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-24 16:58:57,642 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-24 17:01:47,976 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-24 18:20:15,886 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]
+2024-11-24 18:20:16,597 INFO: Application startup [in E:\eims-client_project\eims_client_backend\run.py:33]

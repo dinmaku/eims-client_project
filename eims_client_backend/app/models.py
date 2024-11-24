@@ -19,14 +19,19 @@ def check_user(email, password):
     hashed_password = hash_password(password)
     
     try:
-        cursor.execute("SELECT password FROM users WHERE email = %s", (email,))
+        # Fetch the user entry
+        cursor.execute("SELECT password, user_type FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
-        return user and user[0] == hashed_password
+        
+        # Ensure user exists and password matches
+        if user and user[0] == hashed_password:
+            return True, user[1]  # Return True and user_type (e.g., admin, staff, client)
+        return False, None
     finally:
         cursor.close()
         conn.close()
 
-def create_user(first_name, last_name, email, address, contact_number, password, user_type='client'):
+def create_user(first_name, last_name, email, contact_number, password, user_type='client', country=None, city=None, street=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     hashed_password = hash_password(password)
@@ -39,8 +44,9 @@ def create_user(first_name, last_name, email, address, contact_number, password,
         
         # Insert new user
         cursor.execute(
-            "INSERT INTO users (firstname, lastname, email, address, contactnumber, password, user_type) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (first_name, last_name, email, address, contact_number, hashed_password, user_type)
+            """INSERT INTO users (firstname, lastname, email, contactnumber, password, user_type, country, city, street)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",  # 9 placeholders, matching the 9 values
+            (first_name, last_name, email, contact_number, hashed_password, user_type, country, city, street)
         )
         conn.commit()
         return True
@@ -48,23 +54,24 @@ def create_user(first_name, last_name, email, address, contact_number, password,
         cursor.close()
         conn.close()
 
-def add_wishlist_item(userid, event_name, event_type, event_theme, event_color, venue):
+
+def add_event_item(userid, event_name, event_type, event_theme, event_color, venue, schedule=None, start_time=None, end_time=None, status='wishlist'):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
         cursor.execute(
             """
-            INSERT INTO wishlist (userid, event_name, event_type, event_theme, event_color, venue)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING wishlist_id
+            INSERT INTO events (userid, event_name, event_type, event_theme, event_color, venue, schedule, start_time, end_time, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING events_id
             """,
-            (userid, event_name, event_type, event_theme, event_color, venue)
+            (userid, event_name, event_type, event_theme, event_color, venue, schedule, start_time, end_time, status)
         )
-        wishlist_id = cursor.fetchone()[0]  # Fetch the generated wishlist_id
+        events_id = cursor.fetchone()[0]  # Fetch the generated events_id
         conn.commit()
-        return wishlist_id  # Return the wishlist_id
+        return events_id  # Return the events_id
     except Exception as e:
-        logger.error(f"Error adding wishlist item: {e}")
+        logger.error(f"Error adding event item: {e}")
         conn.rollback()
         return None
     finally:
@@ -279,48 +286,49 @@ def get_booked_wishlist_by_user(userid):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT wishlist_id, userid, event_name, event_type, event_theme, event_color, venue
-            FROM wishlist
+            SELECT events_id, userid, event_name, event_type, event_theme, event_color, venue, schedule, start_time, end_time, status
+            FROM events
             WHERE userid = %s
         """, (userid,))
-        wishlists = cursor.fetchall()
-        if wishlists:
+        events = cursor.fetchall()
+        if events:
             return [
                 {
-                    'wishlist_id': item[0],
+                    'events_id': item[0],
                     'userid': item[1],
                     'event_name': item[2],
                     'event_type': item[3],
                     'event_theme': item[4],
                     'event_color': item[5],
-                    'venue': item[6]
+                    'venue': item[6],
+                    'schedule': item[7],
+                    'start_time': item[8],
+                    'end_time': item[9],
+                    'status': item[10]
                 }
-                for item in wishlists
+                for item in events
             ]
         else:
-            return []  # No wishlists found for the user
+            return []  # No events found for the user
     except Exception as e:
-        logger.error(f"Error fetching wishlists for user {userid}: {e}")
+        logger.error(f"Error fetching events for user {userid}: {e}")
         return []
     finally:
         cursor.close()
         conn.close()
+
 # Delete wishlist and related events
-def delete_booked_wishlist(wishlist_id):
+def delete_booked_wishlist(events_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         # First, delete related events (to avoid foreign key violation)
-        cursor.execute("""DELETE FROM events WHERE wishlist_id = %s""", (wishlist_id,))
-        conn.commit()
-
-        # Then, delete the wishlist item
-        cursor.execute("""DELETE FROM wishlist WHERE wishlist_id = %s""", (wishlist_id,))
+        cursor.execute("""DELETE FROM events WHERE events_id = %s""", (events_id,))
         conn.commit()
 
         return True
     except Exception as e:
-        logger.error(f"Error deleting wishlist item {wishlist_id}: {e}")
+        logger.error(f"Error deleting event item {events_id}: {e}")
         conn.rollback()  # Rollback in case of error
         return False
     finally:
@@ -361,3 +369,6 @@ def get_booked_outfits():
 def get_booked_outfits_by_user(userid):
     booked_outfits = get_booked_outfits()
     return [outfit for outfit in booked_outfits if outfit['userid'] == userid]
+
+
+

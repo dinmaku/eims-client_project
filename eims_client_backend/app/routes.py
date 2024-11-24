@@ -1,7 +1,7 @@
 #routes.py
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import check_user, create_user, add_wishlist_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, add_event_entry, get_booked_outfits_by_user
+from .models import check_user, create_user, add_event_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, add_event_entry, get_booked_outfits_by_user
 import logging
 import jwt
 from functools import wraps
@@ -25,13 +25,15 @@ def init_routes(app):
                 return jsonify({'message': 'Email and password are required!'}), 400
 
             # Check the user credentials
-            if check_user(email, password):
-                # Generate JWT token
-                access_token = create_access_token(identity=email)
+            is_valid, user_type = check_user(email, password)
+            if is_valid:
+                # Generate JWT token with additional claims
+                access_token = create_access_token(identity=email, additional_claims={"user_type": user_type})
 
                 return jsonify({
                     'message': 'Login successful!',
-                    'access_token': access_token
+                    'access_token': access_token,
+                    'user_type': user_type
                 }), 200
             else:
                 print("Invalid credentials")
@@ -44,20 +46,23 @@ def init_routes(app):
     @app.route('/register', methods=['POST'])
     def register():
         data = request.json
+        print(data)  # Log the incoming data for debugging
         first_name = data.get('firstName')
         last_name = data.get('lastName')
         email = data.get('email')
-        address = data.get('address')
         contact_number = data.get('contactNumber')
         password = data.get('password')
+        country = data.get('country', '') 
+        city = data.get('city', '')        
+        street = data.get('street', '')   
         user_type = 'client'  # Default user type
 
         # Validate required fields
-        if not all([first_name, last_name, email, address, contact_number, password]):
+        if not all([first_name, last_name, email, contact_number, password]):
             return jsonify({'message': 'All fields are required!'}), 400
 
         # Attempt to create the user
-        if create_user(first_name, last_name, email, address, contact_number, password, user_type):
+        if create_user(first_name, last_name, email ,contact_number, password, user_type, country, city, street):
             return jsonify({'message': 'Registration successful!'}), 201
         else:
             return jsonify({'message': 'Email already exists!'}), 409
@@ -81,23 +86,18 @@ def init_routes(app):
         if not all([event_name, event_type, event_theme, event_color, venue]):
             return jsonify({'message': 'All fields are required!'}), 400
 
-        # Add the wishlist item and get its ID
-        wishlist_id = add_wishlist_item(userid, event_name, event_type, event_theme, event_color, venue)
+        # Add the event item and get its ID
+        events_id = add_event_item(userid, event_name, event_type, event_theme, event_color, venue, 
+                                schedule=data.get('schedule', None), 
+                                start_time=data.get('start_time', None), 
+                                end_time=data.get('end_time', None), 
+                                status=data.get('status', 'wishlist'))
 
-        if wishlist_id:
-            # Prepare data for the events table
-            schedule = data.get('schedule', 'TBD')  # Default if not provided
-            start_time = data.get('start_time', '00:00:00')  # Default if not provided
-            end_time = data.get('end_time', '00:00:00')  # Default if not provided
-            status = data.get('status', 'Pending')  # Default if not provided
-
-            # Insert the corresponding data into the events table
-            if add_event_entry(wishlist_id, schedule, start_time, end_time, status):
-                return jsonify({'message': 'Wishlist item and event added successfully'}), 201
-            else:
-                return jsonify({'message': 'Error adding event to events table'}), 500
+        if events_id:
+            return jsonify({'message': 'Event added successfully', 'events_id': events_id}), 201
         else:
-            return jsonify({'message': 'Error adding wishlist item'}), 500
+            return jsonify({'message': 'Error adding event'}), 500
+
 
 
     @app.route('/wishlist', methods=['GET'])
@@ -232,21 +232,22 @@ def init_routes(app):
             email = get_jwt_identity()
             userid = get_user_id_by_email(email)  # Assuming a function to get user ID by email exists
 
-            wishlists = get_booked_wishlist_by_user(userid)
-            return jsonify(wishlists), 200
+            # Fetch events for the user from the updated events table
+            booked_wishlist = get_booked_wishlist_by_user(userid)
+            return jsonify(booked_wishlist), 200
         except Exception as e:
             return jsonify({'message': f'Error fetching booked wishlist: {str(e)}'}), 500
-        
 
-    @app.route('/booked_wishlist/<int:wishlist_id>', methods=['DELETE'])
+
+    @app.route('/booked_wishlist/<int:events_id>', methods=['DELETE'])
     @jwt_required()  # Assuming you're using JWT for authorization
-    def delete_wishlist_item(wishlist_id):
+    def delete_wishlist_item(events_id):
         try:
-            # Call the function to delete the wishlist item
-            if delete_booked_wishlist(wishlist_id):
-                return jsonify({"message": "Wishlist item deleted successfully"}), 200
+            # Call the function to delete the event item by events_id
+            if delete_booked_wishlist(events_id):
+                return jsonify({"message": "Event item deleted successfully"}), 200
             else:
-                return jsonify({"message": "Failed to delete wishlist item"}), 500
+                return jsonify({"message": "Failed to delete event item"}), 500
         except Exception as e:
             return jsonify({"message": f"Error: {str(e)}"}), 500
 
@@ -269,6 +270,5 @@ def init_routes(app):
         except Exception as e:
             # If there's an error, return a message with the error details
             return jsonify({'message': f'Error fetching booked outfits: {str(e)}'}), 500
-    
 
 
