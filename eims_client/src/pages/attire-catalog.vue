@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex items-center justify-center bg-gray-500">
+  <div class="h-screen flex items-center justify-center bg-gray-500 ">
     <div class="w-full h-full overflow-y-auto">
       <div class="mt-32 ml-5">
         <h1 class="md:text-3xl font-raleway font-semibold text-gray-50">Gowns and Tuxedo</h1>
