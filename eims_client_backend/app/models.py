@@ -55,7 +55,7 @@ def create_user(first_name, last_name, email, contact_number, password, user_typ
         conn.close()
 
 
-def add_event_item(userid, event_name, event_type, event_theme, event_color, venue, schedule=None, start_time=None, end_time=None, status='wishlist'):
+def add_event_item(userid, event_name, event_type, event_theme, event_color, venue, schedule=None, start_time=None, end_time=None, status='Wishlist'):
     conn = get_db_connection()
     cursor = conn.cursor()
 

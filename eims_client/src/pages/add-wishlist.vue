@@ -149,7 +149,7 @@ export default {
                 schedule: null, // Schedule left as null
                 start_time: null, // Start time left as null
                 end_time: null, // End time left as null
-                status: "wishlist" // Status left as null
+                status: "Wishlist" // Status left as null
             };
 
             try {

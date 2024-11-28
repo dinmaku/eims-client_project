@@ -91,7 +91,7 @@ def init_routes(app):
                                 schedule=data.get('schedule', None), 
                                 start_time=data.get('start_time', None), 
                                 end_time=data.get('end_time', None), 
-                                status=data.get('status', 'wishlist'))
+                                status=data.get('status', 'Wishlist'))
 
         if events_id:
             return jsonify({'message': 'Event added successfully', 'events_id': events_id}), 201
