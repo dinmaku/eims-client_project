@@ -19,8 +19,8 @@
             </div>
             <div class="flex flex-col justify-start items-start mt-5 space-y-2">
                 <p class="text-sm text-red-600" v-if="errorMessage">{{ errorMessage }}</p>
-                <label for="emailInput" class="text-left text-sm text-gray-800">Email Address</label>
-                <input type="email" id="emailInput" v-model="email" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-10 font-medium text-sm" required/>
+                <label for="emailInput" class="text-left text-sm text-gray-800">Email Address or Username</label>
+                <input type="text" id="emailInput" v-model="identifier" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-10 font-medium text-sm" required/>
             </div>
             <div class="flex flex-col justify-start items-start mt-5 space-y-2">
                 <label for="passwordInput" class="text-left text-sm text-gray-800">Password</label>
@@ -43,7 +43,7 @@
 
     <!-- Register Form -->
     <form v-if="registerForm" @submit.prevent="handleRegister" class="flex justify-center items-center fixed inset-0 bg-gray-800 bg-opacity-70">
-        <div class="bg-white w-full sm:w-2/5 h-[97%] p-7 rounded-lg shadow-xl overflow-y-auto mr-2">
+        <div class="bg-white w-full sm:w-[45%] h-[98%] p-7 rounded-lg shadow-xl overflow-y-auto mr-2">
             <div class="flex justify-end">
                 <button @click="closeRegisterForm" class="text-gray-600 text-md transition-transform duration-300 transform hover:scale-110 hover:bg-gray-300 hover:rounded-full px-2">X</button>
             </div>
@@ -65,22 +65,16 @@
                 </div>
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
+                <label for="address" class="text-left text-sm text-gray-800">Username</label>
+                <input type="text" v-model="username" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+            </div>
+            <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="address" class="text-left text-sm text-gray-800">Email</label>
                 <input type="text" v-model="email" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
             </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
-              <label for="country" class="text-left text-sm text-gray-800">Country</label>
-              <input type="text" v-model="country" id="country" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
-          </div>
-
-          <div class="flex flex-col justify-start items-start mt-3 space-y-2">
-              <label for="city" class="text-left text-sm text-gray-800">City</label>
-              <input type="text" v-model="city" id="city" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
-          </div>
-
-          <div class="flex flex-col justify-start items-start mt-3 space-y-2">
-              <label for="street" class="text-left text-sm text-gray-800">Street</label>
-              <input type="text" v-model="street" id="street" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
+              <label for="country" class="text-left text-sm text-gray-800">Address</label>
+              <input type="text" v-model="address" class="mt-1 border border-gray-300 rounded pl-3 p-2 w-full h-9 font-medium text-sm bg-gray-50" required>
           </div>
             <div class="flex flex-col justify-start items-start mt-3 space-y-2">
                 <label for="contactNumber" class="text-left text-sm text-gray-800">Contact Number</label>
@@ -122,13 +116,11 @@ export default {
   data() {
     return {
       registerForm: false,
-      email: '',
+      identifier: '',
       password: '',
       firstName: '',
       lastName: '',
-      country: '',
-      city: '',
-      street: '',
+      address: '',
       contactNumber: '',
       registerPassword: '',
       errorMessage: '',
@@ -160,49 +152,49 @@ export default {
       this.registerForm = false;
     },
     async handleLogin() {
-        try {
-          const response = await axios.post('http://127.0.0.1:5000/login', {
-            email: this.email,
-            password: this.password,
-          });
+          try {
+              const response = await axios.post('http://127.0.0.1:5000/login', {
+                  identifier: this.identifier,  // Can be email or username
+                  password: this.password,
+              });
 
-          // Store the JWT token in localStorage (ensure it's the correct field name based on your API response)
-          localStorage.setItem('access_token', response.data.access_token); // assuming your API returns 'token'
+              // Store the JWT token in localStorage
+              localStorage.setItem('access_token', response.data.access_token);
 
-          // Emit an event with login success
-          this.$emit('loginSuccess');
-          
-          // Reset the login form and close it
-          this.resetLoginForm();
-          this.closeLoginForm();
+              // Emit an event with login success
+              this.$emit('loginSuccess');
+              
+              // Reset the login form and close it
+              this.resetLoginForm();
+              this.closeLoginForm();
 
-          // Redirect to /add-wishlist or desired page after successful login
-          this.$router.push('');  // Ensure this is the correct route
-
-        } catch (error) {
-          // Handle errors during login attempt
-          if (error.response && error.response.data) {
-            this.errorMessage = error.response.data.message || 'Login failed. Please check your credentials.';
-          } else {
-            this.errorMessage = 'An error occurred. Please try again later.';
+              // Redirect to a desired page after successful login
+              this.$router.push('');  // Ensure this is the correct route
+          } catch (error) {
+              // Handle errors during login attempt
+              if (error.response && error.response.data) {
+                  this.errorMessage = error.response.data.message || 'Login failed. Please check your credentials.';
+              } else {
+                  this.errorMessage = 'An error occurred. Please try again later.';
+              }
+              console.error('Login error:', error);
           }
-          console.error('Login error:', error);
-        }
       },
 
-    resetLoginForm() {
-      this.email = '';
-      this.password = '';
-      this.errorMessage = '';
-    },
+      resetLoginForm() {
+          this.identifier = '';  // Clear identifier (email/username)
+          this.password = '';
+          this.errorMessage = '';
+      },
+
 
     async handleRegister() {
           try {
               // Check if all fields are populated before sending the request
               const fields = [
-                  this.firstName, this.lastName, this.email,
-                  this.contactNumber, this.registerPassword, this.country, 
-                  this.city, this.street
+                  this.firstName, this.lastName, this.username, this.email,
+                  this.contactNumber, this.registerPassword, this.address, 
+                  
               ];
               
               if (fields.some(field => !field)) {
@@ -213,12 +205,12 @@ export default {
               const response = await axios.post('http://127.0.0.1:5000/register', {
                   firstName: this.firstName,
                   lastName: this.lastName,
+                  username: this.username,
                   email: this.email,
                   contactNumber: this.contactNumber,
                   password: this.registerPassword,
-                  country: this.country,
-                  city: this.city,
-                  street: this.street,
+                  address: this.address,
+            
               });
 
               // Reset form and navigate to login after successful registration
@@ -237,10 +229,9 @@ export default {
     resetRegisterForm() {
       this.firstName = '';
       this.lastName = '';
+      this.username = '',
       this.email = '';
-      this.country = '';
-      this.city = '';
-      this.street = '';
+      this.address = '';
       this.contactNumber = '';
       this.registerPassword = '';
       this.errorMessage = '';

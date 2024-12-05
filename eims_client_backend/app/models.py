@@ -3,7 +3,8 @@
 import hashlib
 from .db import get_db_connection
 import logging
-from datetime import date
+from datetime import date, time
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -13,16 +14,25 @@ logger = logging.getLogger(__name__)
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-def check_user(email, password):
+def check_user(identifier, password):
+    """
+    Checks if the user exists using either email or username.
+    :param identifier: email or username of the user
+    :param password: plaintext password to verify
+    :return: Tuple (is_valid, user_type)
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
     hashed_password = hash_password(password)
-    
+
     try:
-        # Fetch the user entry
-        cursor.execute("SELECT password, user_type FROM users WHERE email = %s", (email,))
+        # Check for user by email or username
+        cursor.execute(
+            "SELECT password, user_type FROM users WHERE email = %s OR username = %s",
+            (identifier, identifier)
+        )
         user = cursor.fetchone()
-        
+
         # Ensure user exists and password matches
         if user and user[0] == hashed_password:
             return True, user[1]  # Return True and user_type (e.g., admin, staff, client)
@@ -31,7 +41,7 @@ def check_user(email, password):
         cursor.close()
         conn.close()
 
-def create_user(first_name, last_name, email, contact_number, password, user_type='client', country=None, city=None, street=None):
+def create_user(first_name, last_name, username, email, contact_number, password, user_type='Client', address=''):
     conn = get_db_connection()
     cursor = conn.cursor()
     hashed_password = hash_password(password)
@@ -44,9 +54,9 @@ def create_user(first_name, last_name, email, contact_number, password, user_typ
         
         # Insert new user
         cursor.execute(
-            """INSERT INTO users (firstname, lastname, email, contactnumber, password, user_type, country, city, street)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",  # 9 placeholders, matching the 9 values
-            (first_name, last_name, email, contact_number, hashed_password, user_type, country, city, street)
+            """INSERT INTO users (firstname, lastname, username, email, contactnumber, password, user_type, address)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",  # Correct number of placeholders
+            (first_name, last_name, username, email, contact_number, hashed_password, user_type, address)
         )
         conn.commit()
         return True
@@ -55,28 +65,7 @@ def create_user(first_name, last_name, email, contact_number, password, user_typ
         conn.close()
 
 
-def add_event_item(userid, event_name, event_type, event_theme, event_color, venue, schedule=None, start_time=None, end_time=None, status='Wishlist'):
-    conn = get_db_connection()
-    cursor = conn.cursor()
 
-    try:
-        cursor.execute(
-            """
-            INSERT INTO events (userid, event_name, event_type, event_theme, event_color, venue, schedule, start_time, end_time, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING events_id
-            """,
-            (userid, event_name, event_type, event_theme, event_color, venue, schedule, start_time, end_time, status)
-        )
-        events_id = cursor.fetchone()[0]  # Fetch the generated events_id
-        conn.commit()
-        return events_id  # Return the events_id
-    except Exception as e:
-        logger.error(f"Error adding event item: {e}")
-        conn.rollback()
-        return None
-    finally:
-        cursor.close()
-        conn.close()
 
 
 def get_user_wishlist(userid):
@@ -84,30 +73,59 @@ def get_user_wishlist(userid):
     cursor = conn.cursor()
 
     try:
-        cursor.execute(
-            """
-            SELECT wishlist_id, event_name, event_type, event_theme, event_color, venue
-            FROM wishlist
-            WHERE userid = %s
-            """,
-            (userid,)
-        )
+        cursor.execute("""
+            SELECT 
+                e.events_id, e.event_name, e.event_type, e.event_theme, e.event_color, 
+                e.schedule, e.start_time, e.end_time, e.status,
+                ep.package_id, ep.package_name, ep.package_type, ep.capacity, 
+                ep.description AS package_description, ep.total_price,
+                v.venue_name, v.location, 
+                gp.gown_package_name, gp.gown_package_price,
+                array_agg(DISTINCT ps.package_service_id) AS package_service_ids,
+                array_agg(DISTINCT ps.supplier_id) AS supplier_ids,
+                array_agg(DISTINCT u.firstname || ' ' || u.lastname) AS supplier_names,
+                array_agg(DISTINCT s.service) AS services,
+                array_agg(DISTINCT s.price) AS service_prices,
+                array_agg(DISTINCT ps.external_supplier_name) AS external_supplier_names,
+                array_agg(DISTINCT ps.external_supplier_contact) AS external_supplier_contacts,
+                array_agg(DISTINCT ps.external_supplier_price) AS external_supplier_prices,
+                array_agg(DISTINCT ps.remarks) AS remarks
+            FROM events e
+            LEFT JOIN event_packages ep ON e.package_id = ep.package_id
+            LEFT JOIN venues v ON ep.venue_id = v.venue_id
+            LEFT JOIN gown_package gp ON ep.gown_package_id = gp.gown_package_id
+            LEFT JOIN event_package_services eps ON ep.package_id = eps.package_id
+            LEFT JOIN package_service ps ON eps.package_service_id = ps.package_service_id
+            LEFT JOIN suppliers s ON ps.supplier_id = s.supplier_id
+            LEFT JOIN users u ON s.userid = u.userid
+            WHERE e.userid = %s  -- Ensuring we filter by the specific user id
+            GROUP BY e.events_id, ep.package_id, v.venue_name, v.location, gp.gown_package_name, gp.gown_package_price
+        """, (userid,))
+        columns = [desc[0] for desc in cursor.description]
         wishlist = cursor.fetchall()
-        # Transform the result into a list of dictionaries
-        return [
-            {
-                'wishlist_id': item[0],
-                'event_name': item[1],
-                'event_type': item[2],
-                'event_theme': item[3],
-                'event_color': item[4],
-                'venue': item[5],
-            }
-            for item in wishlist
-        ]
+
+        # Convert the result to dictionaries and ensure time objects are strings
+        result = []
+        for item in wishlist:
+            item_dict = dict(zip(columns, item))
+            if isinstance(item_dict['start_time'], time):
+                item_dict['start_time'] = item_dict['start_time'].strftime("%H:%M:%S")
+            if isinstance(item_dict['end_time'], time):
+                item_dict['end_time'] = item_dict['end_time'].strftime("%H:%M:%S")
+            result.append(item_dict)
+        
+       
+
+        return result
     finally:
         cursor.close()
         conn.close()
+
+
+
+
+
+
 
 
 def add_event_entry(wishlist_id, schedule, start_time, end_time, status):
@@ -372,3 +390,203 @@ def get_booked_outfits_by_user(userid):
 
 
 
+#package models
+
+def get_packages():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                ep.package_id, ep.package_name, ep.package_type, ep.capacity, ep.description, 
+                ep.gown_package_id, gp.gown_package_name, gp.gown_package_price, 
+                ep.additional_capacity_charges, ep.charge_unit, ep.total_price, 
+                v.venue_id, v.venue_name, v.location, v.venue_price, 
+                array_agg(ps.package_service_id) AS service_ids, 
+                array_agg(s.supplier_id) AS supplier_ids, 
+                array_agg(s.service) AS services, 
+                array_agg(s.price) AS service_prices, 
+                array_agg(u.firstname) AS supplier_firstnames, 
+                array_agg(u.lastname) AS supplier_lastnames, 
+                array_agg(u.email) AS supplier_emails, 
+                array_agg(u.contactnumber) AS supplier_contacts, 
+                array_agg(ps.external_supplier_name) AS external_supplier_names, 
+                array_agg(ps.external_supplier_contact) AS external_supplier_contacts, 
+                array_agg(ps.external_supplier_price) AS external_supplier_prices, 
+                array_agg(ps.remarks) AS remarks
+            FROM event_packages ep
+            LEFT JOIN gown_package gp ON ep.gown_package_id = gp.gown_package_id
+            LEFT JOIN venues v ON ep.venue_id = v.venue_id
+            LEFT JOIN event_package_services eps ON ep.package_id = eps.package_id
+            LEFT JOIN package_service ps ON eps.package_service_id = ps.package_service_id
+            LEFT JOIN suppliers s ON ps.supplier_id = s.supplier_id
+            LEFT JOIN users u ON s.userid = u.userid
+            GROUP BY ep.package_id, gp.gown_package_id, v.venue_id
+            """
+        )
+        packages = cursor.fetchall()
+        return [
+            {
+                'package_id': item[0],
+                'package_name': item[1],
+                'package_type': item[2],
+                'capacity': item[3],
+                'description': item[4],
+                'gown_package_id': item[5],
+                'gown_package_name': item[6],
+                'gown_package_price': item[7],
+                'additional_capacity_charges': item[8],
+                'charge_unit': item[9],
+                'total_price': item[10],
+                'venue_id': item[11],
+                'venue_name': item[12],
+                'venue_location': item[13],
+                'venue_price': item[14],
+                'package_service_ids': item[15],
+                'supplier_ids': item[16],
+                'services': item[17],
+                'service_prices': item[18],
+                'supplier_firstnames': item[19],
+                'supplier_lastnames': item[20],
+                'supplier_emails': item[21],
+                'supplier_contacts': item[22],
+                'external_supplier_names': item[23],
+                'external_supplier_contacts': item[24],
+                'external_supplier_prices': item[25],
+                'remarks': item[26],
+            }
+            for item in packages
+        ]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_package_details_by_id(package_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT ep.package_id, ep.package_name, ep.package_type, ep.capacity, ep.description, ep.total_price,
+                   v.venue_name, v.location, v.venue_price,
+                   gp.gown_package_name, gp.gown_package_price,
+                   array_agg(ps.package_service_id) AS package_service_ids,
+                   array_agg(ps.supplier_id) AS supplier_ids,
+                   array_agg(s.service) AS services,
+                   array_agg(s.price) AS service_prices,
+                   array_agg(ps.external_supplier_name) AS external_supplier_names,
+                   array_agg(ps.external_supplier_contact) AS external_supplier_contacts,
+                   array_agg(ps.external_supplier_price) AS external_supplier_prices,
+                   array_agg(ps.remarks) AS remarks
+            FROM event_packages ep
+            LEFT JOIN venues v ON ep.venue_id = v.venue_id
+            LEFT JOIN gown_package gp ON ep.gown_package_id = gp.gown_package_id
+            LEFT JOIN event_package_services eps ON ep.package_id = eps.package_id
+            LEFT JOIN package_service ps ON eps.package_service_id = ps.package_service_id
+            LEFT JOIN suppliers s ON ps.supplier_id = s.supplier_id
+            WHERE ep.package_id = %s
+            GROUP BY ep.package_id, v.venue_name, v.location, v.venue_price, gp.gown_package_name, gp.gown_package_price
+        """, (package_id,))
+        columns = [desc[0] for desc in cursor.description]
+        package = cursor.fetchone()
+        return dict(zip(columns, package)) if package else None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+def add_event_item(userid, event_name, event_type, event_theme, event_color, package_id, suppliers, schedule=None, start_time=None, end_time=None, status='Wishlist'):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("BEGIN")
+        
+        # Insert into events table
+        cursor.execute("""
+            INSERT INTO events (userid, event_name, event_type, event_theme, event_color, package_id, schedule, start_time, end_time, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING events_id
+        """, (userid, event_name, event_type, event_theme, event_color, package_id, schedule, start_time, end_time, status))
+        events_id = cursor.fetchone()[0]
+
+        # Insert suppliers into package_service table
+        for supplier in suppliers:
+            if supplier['type'] == 'internal':
+                cursor.execute("""
+                    INSERT INTO package_service (supplier_id, remarks)
+                    VALUES (%s, %s)
+                """, (supplier['id'], supplier.get('remarks', '')))
+            else:
+                cursor.execute("""
+                    INSERT INTO package_service (external_supplier_name, external_supplier_contact, external_supplier_price, remarks)
+                    VALUES (%s, %s, %s, %s)
+                """, (supplier['external_supplier_name'], supplier['external_supplier_contact'], supplier['external_supplier_price'], supplier.get('remarks', '')))
+
+        cursor.execute("COMMIT")
+        return events_id
+    except Exception as e:
+        cursor.execute("ROLLBACK")
+        print(f"Error adding event item: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+def get_user_id_by_email(email):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT userid FROM users WHERE email = %s", (email,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_available_suppliers():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT s.supplier_id, u.firstname, u.lastname, s.service, s.price
+            FROM suppliers s
+            JOIN users u ON s.userid = u.userid
+        """)
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_available_venues():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT venue_id, venue_name, location, venue_price FROM venues")
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_available_gown_packages():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT gown_package_id, gown_package_name, gown_package_price FROM gown_package")
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()

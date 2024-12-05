@@ -1,7 +1,7 @@
 #routes.py
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import check_user, create_user, add_event_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, add_event_entry, get_booked_outfits_by_user
+from .models import check_user, create_user, add_event_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, get_package_details_by_id, get_booked_outfits_by_user, get_packages, get_available_suppliers, get_available_venues, get_available_gown_packages
 import logging
 import jwt
 from functools import wraps
@@ -16,19 +16,18 @@ def init_routes(app):
         try:
             # Get the login data
             data = request.json
-            email = data.get('email')
+            identifier = data.get('identifier')  # Can be email or username
             password = data.get('password')
 
-            # Check if email and password are provided
-            if not email or not password:
-                print("Missing email or password")
-                return jsonify({'message': 'Email and password are required!'}), 400
+            # Check if identifier and password are provided
+            if not identifier or not password:
+                return jsonify({'message': 'Username/Email and password are required!'}), 400
 
             # Check the user credentials
-            is_valid, user_type = check_user(email, password)
+            is_valid, user_type = check_user(identifier, password)
             if is_valid:
                 # Generate JWT token with additional claims
-                access_token = create_access_token(identity=email, additional_claims={"user_type": user_type})
+                access_token = create_access_token(identity=identifier, additional_claims={"user_type": user_type})
 
                 return jsonify({
                     'message': 'Login successful!',
@@ -36,12 +35,13 @@ def init_routes(app):
                     'user_type': user_type
                 }), 200
             else:
-                print("Invalid credentials")
-                return jsonify({'message': 'Invalid email or password.'}), 401
+                return jsonify({'message': 'Invalid username/email or password.'}), 401
 
         except Exception as e:
             print(f"Error during login: {e}")
             return jsonify({'message': 'An error occurred during login.'}), 500
+
+
 
     @app.route('/register', methods=['POST'])
     def register():
@@ -49,54 +49,109 @@ def init_routes(app):
         print(data)  # Log the incoming data for debugging
         first_name = data.get('firstName')
         last_name = data.get('lastName')
+        username = data.get('username')
         email = data.get('email')
         contact_number = data.get('contactNumber')
         password = data.get('password')
-        country = data.get('country', '') 
-        city = data.get('city', '')        
-        street = data.get('street', '')   
-        user_type = 'client'  # Default user type
+        address = data.get('address', '') 
+        user_type = 'Client'  # Default user type
 
         # Validate required fields
-        if not all([first_name, last_name, email, contact_number, password]):
+        if not all([first_name, last_name, username, email, contact_number, password]):
             return jsonify({'message': 'All fields are required!'}), 400
 
         # Attempt to create the user
-        if create_user(first_name, last_name, email ,contact_number, password, user_type, country, city, street):
+        if create_user(first_name, last_name, username, email, contact_number, password, user_type, address):
             return jsonify({'message': 'Registration successful!'}), 201
         else:
             return jsonify({'message': 'Email already exists!'}), 409
+
 
     @app.route('/wishlist', methods=['POST'])
     @jwt_required()
     def add_wishlist():
         email = get_jwt_identity()
+        print(f"Email from JWT: {email}")  # Debug statement
+
         userid = get_user_id_by_email(email)
+        print(f"User ID from email: {userid}")  # Debug statement
+
+        # Check if `userid` is None
+        if userid is None:
+            return jsonify({'message': 'Failed to retrieve user ID'}), 400
+
         data = request.json
+        print(f"Data received: {data}")  # Debug statement
 
-        event_name = data.get('event_name')
-        event_type = data.get('event_type')
-        event_theme = data.get('event_theme')
-        event_color = data.get('event_color')
-        venue = data.get('venue')
+        required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 'package_id', 'suppliers']
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields'}), 400
 
-        # Log the incoming data to check if it's being sent correctly
-        app.logger.debug(f"Received data: {data}")
-
-        if not all([event_name, event_type, event_theme, event_color, venue]):
-            return jsonify({'message': 'All fields are required!'}), 400
-
-        # Add the event item and get its ID
-        events_id = add_event_item(userid, event_name, event_type, event_theme, event_color, venue, 
-                                schedule=data.get('schedule', None), 
-                                start_time=data.get('start_time', None), 
-                                end_time=data.get('end_time', None), 
-                                status=data.get('status', 'Wishlist'))
+        events_id = add_event_item(
+            userid=userid,
+            event_name=data['event_name'],
+            event_type=data['event_type'],
+            event_theme=data['event_theme'],
+            event_color=data['event_color'],
+            package_id=data['package_id'],
+            suppliers=data['suppliers'],
+            schedule=data.get('schedule'),
+            start_time=data.get('start_time'),
+            end_time=data.get('end_time'),
+            status='Wishlist'
+        )
 
         if events_id:
             return jsonify({'message': 'Event added successfully', 'events_id': events_id}), 201
         else:
-            return jsonify({'message': 'Error adding event'}), 500
+            return jsonify({'message': 'Failed to add event'}), 500
+
+
+
+
+
+    @app.route('/available-suppliers', methods=['GET'])
+    @jwt_required()
+    def get_available_suppliers_route():
+        try:
+            suppliers = get_available_suppliers()
+            return jsonify(suppliers), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching available suppliers: {e}")
+            return jsonify({'message': 'An error occurred while fetching available suppliers'}), 500
+
+    @app.route('/available-venues', methods=['GET'])
+    @jwt_required()
+    def get_available_venues_route():
+        try:
+            venues = get_available_venues()
+            return jsonify(venues), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching available venues: {e}")
+            return jsonify({'message': 'An error occurred while fetching available venues'}), 500
+
+    @app.route('/available-gown-packages', methods=['GET'])
+    @jwt_required()
+    def get_available_gown_packages_route():
+        try:
+            gown_packages = get_available_gown_packages()
+            return jsonify(gown_packages), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching available gown packages: {e}")
+            return jsonify({'message': 'An error occurred while fetching available gown packages'}), 500
+
+    @app.route('/packages/<int:package_id>', methods=['GET'])
+    @jwt_required()
+    def get_package_details(package_id):
+        try:
+            package = get_package_details_by_id(package_id)  # Implement this function to fetch package details
+            if not package:
+                return jsonify({'message': 'Package not found'}), 404
+            return jsonify(package), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching package details: {e}")
+            return jsonify({'message': 'An error occurred while fetching package details'}), 500
+
 
 
 
@@ -105,9 +160,11 @@ def init_routes(app):
     def get_wishlist():
         email = get_jwt_identity()
         userid = get_user_id_by_email(email)
+        print(f"User ID from email: {userid}")  # Debug statement
         wishlist = get_user_wishlist(userid)
 
         return jsonify(wishlist), 200
+
     
     SECRET_KEY = os.getenv('eims', 'fallback_jwt_secret')
 
@@ -272,3 +329,14 @@ def init_routes(app):
             return jsonify({'message': f'Error fetching booked outfits: {str(e)}'}), 500
 
 
+    #packages routes
+    @app.route('/created-packages', methods=['GET'])
+    @jwt_required()
+    def get_packages_route():
+        try:
+            # Fetch all event packages
+            packages = get_packages()
+            return jsonify(packages), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching packages: {e}")
+            return jsonify({'message': 'An error occurred while fetching packages'}), 500

@@ -116,6 +116,7 @@
                                         <th class="px-2 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-800 uppercase tracking-w-normal border-b border-blue-500">Type</th>
                                         <th class="px-2 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-800 uppercase tracking-w-normal border-b border-blue-500">Theme</th>
                                         <th class="px-2 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-800 uppercase tracking-w-normal border-b border-blue-500">Venue</th>
+                                        <th class="px-2 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-800 uppercase tracking-w-normal border-b border-blue-500">Total Price</th>
                                         <th class="px-2 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-800 uppercase tracking-w-normal border-b border-blue-500">Action</th>
                                     </tr>
                                 </thead>
@@ -124,7 +125,8 @@
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_name }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_type }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_theme }}</td>
-                                        <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.venue }}</td>
+                                        <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.venue_name }}</td>
+                                        <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ formatPrice(item.total_price) }}</td>
                                         <td class="px-2  md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">
                                             <button @click="displayWishlistDetails(item)" class="text-blue-500 hover:text-blue-700">View</button>
                                         </td>
@@ -175,46 +177,87 @@
         </div>
 
 
-        <!-- Modal for selected wishlist details -->
-        <div v-if="selectedWishlist" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white p-4 md:p-6 rounded-xl shadow-lg w-full max-w-[95%] md:max-w-[600px]">
-                <button @click="closeWishlistModal" class="text-gray-500 text-2xl md:text-3xl float-right">&times;</button>
-                <div class="mt-3 md:mt-5">
-                    <h1 class="text-lg md:text-xl font-bold mb-3 md:mb-4 font-raleway">Wishlist Details</h1>
-                    <div class="flex flex-col space-y-4">
-                        <p class="text-gray-600">Event Name: <span class="text-black">{{ selectedWishlist.event_name }}</span></p>
-                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
-                            <div class="bg-gray-300 w-full md:w-1/2 px-2 py-3 space-y-2 rounded-xl">
-                                <p class="text-gray-700">Event Type</p>
-                                <p>{{ selectedWishlist.event_type }}</p>
-                            </div>
-                            <div class="bg-gray-300 w-full md:w-1/2 px-2 py-3 space-y-2 rounded-xl">
-                                <p class="text-gray-700">Event Theme</p>
-                                <p>{{ selectedWishlist.event_theme }}</p>
-                            </div>
-                        </div>
-                        <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
-                            <p class="text-gray-700">Event Color</p>
-                            <p>{{ selectedWishlist.event_color }}</p>
-                        </div>
-                        <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
-                            <p class="text-gray-700">Venue</p>
-                            <p>{{ selectedWishlist.venue }}</p>
-                        </div>
+   <!-- Modal for selected wishlist details -->
+<div v-if="selectedWishlist" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white p-4 md:p-6 rounded-xl shadow-lg w-full max-w-[95%] md:max-w-[700px] overflow-y-auto max-h-[90vh]">
+        <button @click="closeWishlistModal" class="text-gray-500 text-2xl md:text-3xl float-right">&times;</button>
+        <div class="mt-3 md:mt-5">
+            <h1 class="text-lg md:text-xl font-bold mb-3 md:mb-4 font-raleway">Wishlist Details</h1>
+            <div class="flex flex-col space-y-4">
+                <p class="text-gray-600">Event Name: <span class="text-black">{{ selectedWishlist.event_name }}</span></p>
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                    <div class="bg-gray-300 w-full md:w-1/2 px-2 py-3 space-y-2 rounded-xl">
+                        <p class="text-gray-700">Event Type</p>
+                        <p>{{ selectedWishlist.event_type }}</p>
                     </div>
-                    <div class="mt-4 md:mt-7 flex justify-end items-center">
-                        <button class="flex items-center space-x-1 px-2 py-1 rounded-lg text-red-500 hover:shadow-lg hover:text-red-700 hover:border-b-2 border-red-600"
-                                @click="deleteWishlistItem(selectedWishlist.events_id)">
-                                <img src="/img/delete.png" alt="Delete Icon" class="w-4 md:w-5 h-4 md:h-5">
-                            <span>Delete</span>
-                        </button>
+                    <div class="bg-gray-300 w-full md:w-1/2 px-2 py-3 space-y-2 rounded-xl">
+                        <p class="text-gray-700">Event Theme</p>
+                        <p>{{ selectedWishlist.event_theme }}</p>
                     </div>
                 </div>
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Event Color</p>
+                    <p>{{ selectedWishlist.event_color }}</p>
+                </div>
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Venue</p>
+                    <p>{{ selectedWishlist.venue_name }}</p>
+                </div>
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                        <p class="text-gray-700">Package Name</p>
+                        <p>{{ selectedWishlist.package_name }}</p>
+                    </div>
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Total Price</p>
+                    <p>{{ formatPrice(selectedWishlist.total_price) }}</p>
+                </div>
+                <!-- Section for Suppliers with Expand Button -->
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Suppliers</p>
+                    <button @click="showSuppliers = !showSuppliers" class="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        {{ showSuppliers ? 'Hide Suppliers' : 'Show Suppliers' }}
+                    </button>
+                    <div v-if="showSuppliers" class="mt-2 overflow-y-auto max-h-64 space-y-2">
+                        <div v-for="(name, index) in selectedWishlist.supplier_names" :key="index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
+                            <p class="font-semibold text-gray-800">Supplier: {{ name }}</p>
+                            <p class="text-gray-600">Service: {{ selectedWishlist.services[index] }}</p>
+                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.service_prices[index]) }}</p>
+                            <p class="text-gray-600">Remarks: {{ selectedWishlist.remarks[index] }}</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Section for Gown Package -->
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Gown Package</p>
+                    <p v-if="selectedWishlist.gown_package_name">
+                        Package Name: {{ selectedWishlist.gown_package_name }} <br>
+                        Package Price: {{ formatPrice(selectedWishlist.gown_package_price) }} <br>
+                    </p>
+                    <p v-if="selectedWishlist.outfit_name">
+                        Outfit Name: {{ selectedWishlist.outfit_name }} <br>
+                        Rent Price: {{ formatPrice(selectedWishlist.rent_price) }} <br>
+                        Outfit Description: {{ selectedWishlist.outfit_desc }}
+                    </p>
+                    <p v-else>No Gown Package Details Available</p>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-7 flex justify-end items-center">
+                <button class="flex items-center space-x-1 px-2 py-1 rounded-lg text-red-500 hover:shadow-lg hover:text-red-700 hover:border-b-2 border-red-600"
+                        @click="deleteWishlistItem(selectedWishlist.events_id)">
+                    <img src="/img/delete.png" alt="Delete Icon" class="w-4 md:w-5 h-4 md:h-5">
+                    <span>Delete</span>
+                </button>
             </div>
         </div>
+    </div>
+</div>
+
+
+
+
 
        
-
+   
 
     </div>
 </template>
@@ -244,6 +287,8 @@ import axios from 'axios';
 
         bookedWishlist: [],
         bookedOutfits: [],
+
+        showSuppliers: false,
         };
     },
     created() {
@@ -266,24 +311,35 @@ import axios from 'axios';
             {
                 this.displayBookedWishlist = true;
             },
+    
+            formatPrice(price) {
+                if (price === null || price === undefined || isNaN(price)) {
+                    return 'N/A'; // Return a fallback if price is invalid
+                }
+                // Round the price to 2 decimal places and format with commas
+                return parseFloat(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                },
+            
         
                 
 
-        async fetchBookedWishlist() {
-                try {
-                const token = localStorage.getItem('access_token');  // Assuming the JWT token is stored in localStorage
-                const response = await axios.get('http://127.0.0.1:5000/booked-wishlist', {
-                    headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`  // Send the JWT token
-                    },
-                    withCredentials: true  // Send cookies with the request if needed
-                });
-                this.bookedWishlist = response.data;  // Populate bookedWishlist array with data from API
-                } catch (error) {
-                console.error('Error fetching booked wishlist:', error);
-                }
-            },
+                async fetchBookedWishlist() {
+                    try {
+                    const token = localStorage.getItem('access_token');  // Assuming the JWT token is stored in localStorage
+                    const response = await axios.get('http://127.0.0.1:5000/wishlist', {
+                        headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`  // Send the JWT token
+                        },
+                        withCredentials: true  // Send cookies with the request if needed
+                    });
+                    this.bookedWishlist = response.data;  // Populate bookedWishlist array with data from API
+                    console.log("Fetched booked wishlist:", this.bookedWishlist);  // Log the data to verify structure
+                    } catch (error) {
+                    console.error('Error fetching booked wishlist:', error);
+                    }
+                },
+
             async deleteWishlistItem(events_id) {
                 try {
                     const token = localStorage.getItem('access_token');  // Get JWT token from localStorage
@@ -315,6 +371,7 @@ import axios from 'axios';
             },
             closeWishlistModal() {
                 this.selectedWishlist = null;
+                this.showSuppliers = false;
             },
 
 
