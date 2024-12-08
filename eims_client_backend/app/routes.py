@@ -71,19 +71,14 @@ def init_routes(app):
     @jwt_required()
     def add_wishlist():
         email = get_jwt_identity()
-        print(f"Email from JWT: {email}")  # Debug statement
-
         userid = get_user_id_by_email(email)
-        print(f"User ID from email: {userid}")  # Debug statement
 
-        # Check if `userid` is None
         if userid is None:
             return jsonify({'message': 'Failed to retrieve user ID'}), 400
 
         data = request.json
-        print(f"Data received: {data}")  # Debug statement
 
-        required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 'package_id', 'suppliers']
+        required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 'package_id', 'suppliers', 'total_price']
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
 
@@ -95,10 +90,11 @@ def init_routes(app):
             event_color=data['event_color'],
             package_id=data['package_id'],
             suppliers=data['suppliers'],
+            total_price=data['total_price'],
             schedule=data.get('schedule'),
             start_time=data.get('start_time'),
             end_time=data.get('end_time'),
-            status='Wishlist'
+            status=data.get('status', 'Wishlist')
         )
 
         if events_id:

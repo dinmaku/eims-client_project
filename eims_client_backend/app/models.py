@@ -81,15 +81,16 @@ def get_user_wishlist(userid):
                 ep.description AS package_description, ep.total_price,
                 v.venue_name, v.location, 
                 gp.gown_package_name, gp.gown_package_price,
-                array_agg(DISTINCT ps.package_service_id) AS package_service_ids,
-                array_agg(DISTINCT ps.supplier_id) AS supplier_ids,
-                array_agg(DISTINCT u.firstname || ' ' || u.lastname) AS supplier_names,
-                array_agg(DISTINCT s.service) AS services,
-                array_agg(DISTINCT s.price) AS service_prices,
-                array_agg(DISTINCT ps.external_supplier_name) AS external_supplier_names,
-                array_agg(DISTINCT ps.external_supplier_contact) AS external_supplier_contacts,
-                array_agg(DISTINCT ps.external_supplier_price) AS external_supplier_prices,
-                array_agg(DISTINCT ps.remarks) AS remarks
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN ps.package_service_id END), NULL) AS internal_package_service_ids,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN ps.supplier_id END), NULL) AS internal_supplier_ids,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN u.firstname || ' ' || u.lastname END), NULL) AS internal_supplier_names,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN s.service END), NULL) AS internal_services,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN s.price END), NULL) AS internal_service_prices,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.package_service_id END), NULL) AS external_package_service_ids,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_name END), NULL) AS external_supplier_names,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_contact END), NULL) AS external_supplier_contacts,
+                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_price END), NULL) AS external_supplier_prices,
+                array_remove(array_agg(DISTINCT ps.remarks), NULL) AS remarks
             FROM events e
             LEFT JOIN event_packages ep ON e.package_id = ep.package_id
             LEFT JOIN venues v ON ep.venue_id = v.venue_id
@@ -98,7 +99,7 @@ def get_user_wishlist(userid):
             LEFT JOIN package_service ps ON eps.package_service_id = ps.package_service_id
             LEFT JOIN suppliers s ON ps.supplier_id = s.supplier_id
             LEFT JOIN users u ON s.userid = u.userid
-            WHERE e.userid = %s  -- Ensuring we filter by the specific user id
+            WHERE e.userid = %s
             GROUP BY e.events_id, ep.package_id, v.venue_name, v.location, gp.gown_package_name, gp.gown_package_price
         """, (userid,))
         columns = [desc[0] for desc in cursor.description]
@@ -114,13 +115,10 @@ def get_user_wishlist(userid):
                 item_dict['end_time'] = item_dict['end_time'].strftime("%H:%M:%S")
             result.append(item_dict)
         
-       
-
         return result
     finally:
         cursor.close()
         conn.close()
-
 
 
 
@@ -464,6 +462,7 @@ def get_packages():
         conn.close()
 
 
+
 def get_package_details_by_id(package_id):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -471,6 +470,7 @@ def get_package_details_by_id(package_id):
     try:
         cursor.execute("""
             SELECT ep.package_id, ep.package_name, ep.package_type, ep.capacity, ep.description, ep.total_price,
+                   ep.additional_capacity_charges, ep.charge_unit,  -- Added fields
                    v.venue_name, v.location, v.venue_price,
                    gp.gown_package_name, gp.gown_package_price,
                    array_agg(ps.package_service_id) AS package_service_ids,
@@ -499,13 +499,21 @@ def get_package_details_by_id(package_id):
 
 
 
-def add_event_item(userid, event_name, event_type, event_theme, event_color, package_id, suppliers, schedule=None, start_time=None, end_time=None, status='Wishlist'):
+
+def add_event_item(userid, event_name, event_type, event_theme, event_color, package_id, suppliers, total_price, schedule=None, start_time=None, end_time=None, status='Wishlist'):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
         cursor.execute("BEGIN")
-        
+
+        # Update the total_price in the event_packages table
+        cursor.execute("""
+            UPDATE event_packages
+            SET total_price = %s
+            WHERE package_id = %s
+        """, (total_price, package_id))
+
         # Insert into events table
         cursor.execute("""
             INSERT INTO events (userid, event_name, event_type, event_theme, event_color, package_id, schedule, start_time, end_time, status)
@@ -513,18 +521,26 @@ def add_event_item(userid, event_name, event_type, event_theme, event_color, pac
         """, (userid, event_name, event_type, event_theme, event_color, package_id, schedule, start_time, end_time, status))
         events_id = cursor.fetchone()[0]
 
-        # Insert suppliers into package_service table
+        # Insert suppliers into package_service table and link them to event_package_services
         for supplier in suppliers:
             if supplier['type'] == 'internal':
                 cursor.execute("""
                     INSERT INTO package_service (supplier_id, remarks)
-                    VALUES (%s, %s)
-                """, (supplier['id'], supplier.get('remarks', '')))
+                    VALUES (%s, %s) RETURNING package_service_id
+                """, (supplier.get('supplier_id'), supplier.get('remarks', '')))
             else:
                 cursor.execute("""
                     INSERT INTO package_service (external_supplier_name, external_supplier_contact, external_supplier_price, remarks)
-                    VALUES (%s, %s, %s, %s)
-                """, (supplier['external_supplier_name'], supplier['external_supplier_contact'], supplier['external_supplier_price'], supplier.get('remarks', '')))
+                    VALUES (%s, %s, %s, %s) RETURNING package_service_id
+                """, (supplier.get('external_supplier_name'), supplier.get('external_supplier_contact'), supplier.get('external_supplier_price'), supplier.get('remarks', '')))
+            
+            package_service_id = cursor.fetchone()[0]
+            
+            # Link the package_service to the event_package
+            cursor.execute("""
+                INSERT INTO event_package_services (package_id, package_service_id)
+                VALUES (%s, %s)
+            """, (package_id, package_service_id))
 
         cursor.execute("COMMIT")
         return events_id
@@ -535,6 +551,11 @@ def add_event_item(userid, event_name, event_type, event_theme, event_color, pac
     finally:
         cursor.close()
         conn.close()
+
+
+
+        
+
 
 
 

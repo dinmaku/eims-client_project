@@ -211,6 +211,7 @@
                     <p class="text-gray-700">Total Price</p>
                     <p>{{ formatPrice(selectedWishlist.total_price) }}</p>
                 </div>
+           
                 <!-- Section for Suppliers with Expand Button -->
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
                     <p class="text-gray-700">Suppliers</p>
@@ -218,14 +219,24 @@
                         {{ showSuppliers ? 'Hide Suppliers' : 'Show Suppliers' }}
                     </button>
                     <div v-if="showSuppliers" class="mt-2 overflow-y-auto max-h-64 space-y-2">
-                        <div v-for="(name, index) in selectedWishlist.supplier_names" :key="index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
-                            <p class="font-semibold text-gray-800">Supplier: {{ name }}</p>
-                            <p class="text-gray-600">Service: {{ selectedWishlist.services[index] }}</p>
-                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.service_prices[index]) }}</p>
+                        <!-- Internal Suppliers -->
+                        <div v-for="(name, index) in selectedWishlist.internal_supplier_names" :key="'internal-'+index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
+                            <p class="font-semibold text-gray-800">Internal Supplier: {{ name }}</p>
+                            <p class="text-gray-600">Service: {{ selectedWishlist.internal_services[index] }}</p>
+                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.internal_service_prices[index]) }}</p>
                             <p class="text-gray-600">Remarks: {{ selectedWishlist.remarks[index] }}</p>
+                        </div>
+
+                        <!-- External Suppliers -->
+                        <div v-for="(name, index) in selectedWishlist.external_supplier_names" :key="'external-'+index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
+                            <p class="font-semibold text-gray-800">External Supplier: {{ name }}</p>
+                            <p class="text-gray-600">Contact: {{ selectedWishlist.external_supplier_contacts[index] }}</p>
+                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.external_supplier_prices[index]) }}</p>
+                            <p class="text-gray-600">Remarks: {{ selectedWishlist.remarks[index + selectedWishlist.internal_supplier_names.length] }}</p>
                         </div>
                     </div>
                 </div>
+
                 <!-- Section for Gown Package -->
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
                     <p class="text-gray-700">Gown Package</p>
