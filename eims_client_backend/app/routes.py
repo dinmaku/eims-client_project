@@ -1,11 +1,19 @@
 #routes.py
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import check_user, create_user, add_event_item, get_user_wishlist, get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, get_package_details_by_id, get_booked_outfits_by_user, get_packages, get_available_suppliers, get_available_venues, get_available_gown_packages
+from .models import (
+    check_user, create_user, add_to_wishlist, get_user_wishlist, 
+    get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, 
+    book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, 
+    get_package_details_by_id, get_booked_outfits_by_user, get_packages, 
+    get_available_suppliers, get_available_venues, get_available_gown_packages, 
+    get_event_types, get_all_additional_services, get_booked_schedules
+)
 import logging
 import jwt
 from functools import wraps
 import os
+from datetime import datetime, date, time
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -69,41 +77,36 @@ def init_routes(app):
 
     @app.route('/wishlist', methods=['POST'])
     @jwt_required()
-    def add_wishlist():
-        email = get_jwt_identity()
-        userid = get_user_id_by_email(email)
+    def add_wishlist_route():
+        try:
+            email = get_jwt_identity()
+            # Get user ID from email
+            userid = get_user_id_by_email(email)
+            if not userid:
+                return jsonify({'message': 'User not found'}), 404
 
-        if userid is None:
-            return jsonify({'message': 'Failed to retrieve user ID'}), 400
+            data = request.get_json()
 
-        data = request.json
+            # Validate required fields
+            required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 
+                             'package_id', 'schedule', 'start_time', 'end_time',
+                             'suppliers', 'venues']
+            
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({'message': f'Missing required field: {field}'}), 400
 
-        required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 'package_id', 'suppliers', 'total_price']
-        if not all(field in data for field in required_fields):
-            return jsonify({'message': 'Missing required fields'}), 400
+            # Add to wishlist
+            events_id = add_to_wishlist(userid, data)
+            
+            return jsonify({
+                'message': 'Successfully added to wishlist',
+                'events_id': events_id
+            }), 201
 
-        events_id = add_event_item(
-            userid=userid,
-            event_name=data['event_name'],
-            event_type=data['event_type'],
-            event_theme=data['event_theme'],
-            event_color=data['event_color'],
-            package_id=data['package_id'],
-            suppliers=data['suppliers'],
-            total_price=data['total_price'],
-            schedule=data.get('schedule'),
-            start_time=data.get('start_time'),
-            end_time=data.get('end_time'),
-            status=data.get('status', 'Wishlist')
-        )
-
-        if events_id:
-            return jsonify({'message': 'Event added successfully', 'events_id': events_id}), 201
-        else:
-            return jsonify({'message': 'Failed to add event'}), 500
-
-
-
+        except Exception as e:
+            app.logger.error(f"Error adding to wishlist: {str(e)}")
+            return jsonify({'message': 'Failed to add to wishlist'}), 500
 
 
     @app.route('/available-suppliers', methods=['GET'])
@@ -336,3 +339,36 @@ def init_routes(app):
         except Exception as e:
             app.logger.error(f"Error fetching packages: {e}")
             return jsonify({'message': 'An error occurred while fetching packages'}), 500
+
+
+    @app.route('/event-types', methods=['GET'])
+    def get_event_types_route():
+        try:
+            event_types = get_event_types()
+            return jsonify(event_types), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching event types: {e}")
+            return jsonify({"error": str(e)}), 500
+
+
+    #additional services routes
+
+    @app.route('/created-services', methods=['GET'])
+    @jwt_required()
+    def get_services_route():
+        try:
+            services = get_all_additional_services()
+            return jsonify(services), 200
+        except Exception as e:
+            app.logger.error(f"Error fetching services: {e}")
+            return jsonify({'message': 'An error occurred while fetching services'}), 500
+
+    @app.route('/api/events/schedules', methods=['GET'])
+    @jwt_required()
+    def get_booked_schedules_route():
+        try:
+            schedules = get_booked_schedules()
+            return jsonify(schedules)
+        except Exception as e:
+            app.logger.error(f"Error in get_booked_schedules route: {str(e)}")
+            return jsonify({'error': str(e)}), 422
