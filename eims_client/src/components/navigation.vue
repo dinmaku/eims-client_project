@@ -26,8 +26,8 @@
                 <div class="py-1 text-left" role="none">
     
                 <a href="/package-deal" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200">Package Deals</a>
-
                 <a href="/attire-catalog" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200">Attire Rentals</a>
+                <a href="/suppliers-profile" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200">Suppliers Profile</a>
               </div>
               </div>
             </li>

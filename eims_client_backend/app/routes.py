@@ -2,12 +2,13 @@
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from .models import (
-    check_user, create_user, add_to_wishlist, get_user_wishlist, 
+    check_user, create_user, get_user_wishlist, 
     get_user_id_by_email, create_outfit, get_outfits, get_outfit_by_id, 
     book_outfit, get_booked_wishlist_by_user, delete_booked_wishlist, 
     get_package_details_by_id, get_booked_outfits_by_user, get_packages, 
     get_available_suppliers, get_available_venues, get_available_gown_packages, 
-    get_event_types, get_all_additional_services, get_booked_schedules
+    get_event_types, get_all_additional_services, get_booked_schedules, add_event_item,
+    create_wishlist_package, initialize_test_suppliers
 )
 import logging
 import jwt
@@ -75,38 +76,7 @@ def init_routes(app):
             return jsonify({'message': 'Email already exists!'}), 409
 
 
-    @app.route('/wishlist', methods=['POST'])
-    @jwt_required()
-    def add_wishlist_route():
-        try:
-            email = get_jwt_identity()
-            # Get user ID from email
-            userid = get_user_id_by_email(email)
-            if not userid:
-                return jsonify({'message': 'User not found'}), 404
 
-            data = request.get_json()
-
-            # Validate required fields
-            required_fields = ['event_name', 'event_type', 'event_theme', 'event_color', 
-                             'package_id', 'schedule', 'start_time', 'end_time',
-                             'suppliers', 'venues']
-            
-            for field in required_fields:
-                if field not in data:
-                    return jsonify({'message': f'Missing required field: {field}'}), 400
-
-            # Add to wishlist
-            events_id = add_to_wishlist(userid, data)
-            
-            return jsonify({
-                'message': 'Successfully added to wishlist',
-                'events_id': events_id
-            }), 201
-
-        except Exception as e:
-            app.logger.error(f"Error adding to wishlist: {str(e)}")
-            return jsonify({'message': 'Failed to add to wishlist'}), 500
 
 
     @app.route('/available-suppliers', methods=['GET'])
@@ -372,3 +342,193 @@ def init_routes(app):
         except Exception as e:
             app.logger.error(f"Error in get_booked_schedules route: {str(e)}")
             return jsonify({'error': str(e)}), 422
+
+
+
+    @app.route('/events', methods=['POST', 'OPTIONS'])
+    @jwt_required()
+    def create_event():
+        if request.method == 'OPTIONS':
+            # Handle preflight request
+            response = jsonify({'message': 'OK'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 200
+            
+        try:
+            # Get user ID from JWT token
+            email = get_jwt_identity()
+            userid = get_user_id_by_email(email)
+            
+            if not userid:
+                response = jsonify({
+                    'success': False,
+                    'message': 'Invalid user token'
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 401
+
+            data = request.get_json()
+            
+            # Extract base event data
+            event_data = {
+                'userid': userid,  # Use the userid from JWT token
+                'event_name': data.get('event_name'),
+                'event_type': data.get('event_type'),
+                'event_theme': data.get('event_theme'),
+                'event_color': data.get('event_color'),
+                'package_id': data.get('package_id'),
+                'schedule': data.get('schedule'),
+                'start_time': data.get('start_time'),
+                'end_time': data.get('end_time'),
+                'status': data.get('status', 'Wishlist'),
+                'total_price': data.get('total_price', 0)
+            }
+
+            # Package configuration data
+            package_config = {
+                'suppliers': data.get('suppliers', []),
+                'outfits': data.get('outfits', []),
+                'services': data.get('services', []),
+                'additional_items': data.get('additional_items', [])
+            }
+
+            # Add event and its configurations
+            events_id = add_event_item(**event_data, **package_config)
+
+            if events_id:
+                response = jsonify({
+                    'success': True,
+                    'message': 'Event created successfully',
+                    'events_id': events_id
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 201
+            else:
+                response = jsonify({
+                    'success': False,
+                    'message': 'Failed to create event'
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 500
+
+        except Exception as e:
+            app.logger.error(f"Error creating event: {str(e)}")
+            response = jsonify({
+                'success': False,
+                'message': f'Error creating event: {str(e)}'
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 500
+
+
+
+    @app.route('/wishlist-packages', methods=['POST', 'OPTIONS'])
+    @jwt_required()
+    def create_wishlist_package_route():
+        if request.method == 'OPTIONS':
+            # Handle preflight request
+            response = jsonify({'message': 'OK'})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 200
+            
+        try:
+            # Get user ID from token
+            email = get_jwt_identity()
+            userid = get_user_id_by_email(email)
+            
+            if userid is None:
+                response = jsonify({
+                    'success': False,
+                    'message': 'User not found'
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 404
+
+            data = request.get_json()
+
+            # Create wishlist package and its related data
+            wishlist_id = create_wishlist_package(
+                events_id=data.get('events_id'),
+                package_data=data
+            )
+
+            if wishlist_id:
+                response = jsonify({
+                    'success': True,
+                    'message': 'Wishlist package created successfully',
+                    'wishlist_id': wishlist_id
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 201
+            else:
+                response = jsonify({
+                    'success': False,
+                    'message': 'Failed to create wishlist package'
+                })
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                return response, 500
+
+        except Exception as e:
+            app.logger.error(f"Error creating wishlist package: {str(e)}")
+            response = jsonify({
+                'success': False,
+                'message': f'Error creating wishlist package: {str(e)}'
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 500
+
+    @app.route('/api/suppliers', methods=['GET'])
+    def get_suppliers():
+        try:
+            suppliers = get_available_suppliers()
+            response = jsonify({
+                'status': 'success',
+                'data': suppliers
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 200
+        except Exception as e:
+            logging.error(f"Error fetching suppliers: {e}")
+            response = jsonify({
+                'status': 'error',
+                'message': str(e)
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 500
+
+    @app.route('/api/init-test-suppliers', methods=['POST'])
+    def init_test_suppliers():
+        try:
+            success = initialize_test_suppliers()
+            if success:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Test suppliers initialized successfully'
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Failed to initialize test suppliers'
+                }), 500
+        except Exception as e:
+            logging.error(f"Error initializing test suppliers: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': str(e)
+            }), 500

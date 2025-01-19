@@ -7,6 +7,7 @@ import PackageDeal from '../pages/package-deal.vue';
 import AttireCatalog from '../pages/attire-catalog.vue';
 import BookedServices from '../pages/booked_services.vue';
 import VendorSchedule from '../pages/vendor-schedule.vue';
+import SuppliersProfile from '../pages/suppliers_profile.vue';
 
 
 const routes = [
@@ -70,6 +71,15 @@ const routes = [
           title: 'My Schedule',
         },
       },
+      {
+        path: 'suppliers-profile',
+        name: 'Suppliers Profile',
+        component: SuppliersProfile,
+        meta: {
+          title: 'Suppliers Profile',
+        },
+      },
+      
     ],
   },
 ];

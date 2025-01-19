@@ -1226,134 +1226,135 @@ export default {
         },
 
         async submitWishlist() {
-            try {
-                // Get authentication token
-                const token = localStorage.getItem('access_token');
-                if (!token) {
-                    alert('You are not logged in. Please log in to add to the wishlist.');
-                    return;
-                }
+          try {
+              // Get authentication token
+              const token = localStorage.getItem('access_token');
+              if (!token) {
+                  alert('You are not logged in. Please log in to add to the wishlist.');
+                  return;
+              }
 
-                // Validate required fields
-                if (!this.selectedPackage) {
-                    alert('Please select a package');
-                    return;
-                }
+              // Validate required fields
+              if (!this.selectedPackage) {
+                  alert('Please select a package');
+                  return;
+              }
 
-                if (!this.eventSchedule.date || !this.eventSchedule.start_time || !this.eventSchedule.end_time) {
-                    alert('Please fill in all event schedule details');
-                    return;
-                }
+              if (!this.eventSchedule.date || !this.eventSchedule.start_time || !this.eventSchedule.end_time) {
+                  alert('Please fill in all event schedule details');
+                  return;
+              }
 
-                // Get original package suppliers
-                const originalSuppliers = this.selectedPackage.suppliers || [];
-                const originalSupplierIds = new Set(originalSuppliers.map(s => s.supplier_id));
+              // Transform suppliers into the new format
+              const suppliers = this.inclusions
+                  .filter(inclusion => inclusion.type === 'supplier')
+                  .map(inclusion => {
+                      if (inclusion.data.type === 'external') {
+                          return {
+                              supplier_id: null,
+                              price: inclusion.data.external_supplier_price || 0,
+                              remarks: `External: ${inclusion.data.external_supplier_name} (${inclusion.data.external_supplier_contact})`
+                          };
+                      } else {
+                          return {
+                              supplier_id: inclusion.data.supplier_id,
+                              price: inclusion.data.price,
+                              remarks: inclusion.data.remarks || ''
+                          };
+                      }
+                  });
 
-                // Transform inclusions into the format expected by the backend
-                const suppliers = this.inclusions
-                    .filter(inclusion => inclusion.type === 'supplier')
-                    .map(inclusion => {
-                        if (inclusion.data.type === 'external') {
-                            return {
-                                type: 'external',
-                                external_supplier_name: inclusion.data.external_supplier_name,
-                                external_supplier_contact: inclusion.data.external_supplier_contact,
-                                external_supplier_price: inclusion.data.price || 0,
-                                remarks: inclusion.data.remarks || '',
-                                is_added: true // External suppliers are always added
-                            };
-                        } else {
-                            const isOriginal = originalSupplierIds.has(inclusion.data.supplier_id);
-                            const originalSupplier = originalSuppliers.find(s => s.supplier_id === inclusion.data.supplier_id);
-                            const priceModified = originalSupplier && originalSupplier.price !== inclusion.data.price;
-                            
-                            return {
-                                type: 'internal',
-                                supplier_id: inclusion.data.supplier_id,
-                                price: inclusion.data.price,
-                                remarks: inclusion.data.remarks || '',
-                                is_added: !isOriginal,
-                                is_modified: isOriginal && priceModified
-                            };
-                        }
-                    });
+              // Transform outfits into the new format
+              const outfits = this.inclusions
+                  .filter(inclusion => inclusion.type === 'outfit')
+                  .map(inclusion => ({
+                      outfit_id: inclusion.data.outfit_id,
+                      gown_package_id: inclusion.data.gown_package_id,
+                      price: inclusion.data.price,
+                      remarks: inclusion.data.remarks || ''
+                  }));
 
-                // Add removed suppliers
-                const currentSupplierIds = new Set(suppliers
-                    .filter(s => s.type === 'internal')
-                    .map(s => s.supplier_id));
-                
-                const removedSuppliers = originalSuppliers
-                    .filter(s => !currentSupplierIds.has(s.supplier_id))
-                    .map(s => ({
-                        type: 'internal',
-                        supplier_id: s.supplier_id,
-                        price: s.price,
-                        is_removed: true
-                    }));
+              // Transform services into the new format
+              const services = this.inclusions
+                  .filter(inclusion => inclusion.type === 'service')
+                  .map(inclusion => ({
+                      add_service_id: inclusion.data.add_service_id,
+                      price: inclusion.data.price || 0,
+                      remarks: inclusion.data.remarks || ''
+                  }));
 
-                // Combine current and removed suppliers
-                const allSuppliers = [...suppliers, ...removedSuppliers];
+              // First create the event
+              const eventData = {
+                  event_name: this.event_name,
+                  event_type: this.event_type,
+                  event_theme: this.event_theme,
+                  event_color: this.event_color,
+                  schedule: this.eventSchedule.date,
+                  start_time: this.eventSchedule.start_time,
+                  end_time: this.eventSchedule.end_time,
 
-                // Transform venues
-                const venues = this.inclusions
-                    .filter(inclusion => inclusion.type === 'venue')
-                    .map(inclusion => {
-                        const isOriginal = this.selectedPackage.venues?.some(v => v.venue_id === inclusion.data.venue_id);
-                        const originalVenue = this.selectedPackage.venues?.find(v => v.venue_id === inclusion.data.venue_id);
-                        const priceModified = originalVenue && originalVenue.price !== inclusion.data.price;
+                  status: 'Wishlist'
+              };
 
-                        return {
-                            venue_id: inclusion.data.venue_id,
-                            price: inclusion.data.price,
-                            remarks: inclusion.data.remarks || '',
-                            is_added: !isOriginal,
-                            is_modified: isOriginal && priceModified
-                        };
-                    });
+              // Create event first
+              const eventResponse = await axios.post('http://127.0.0.1:5000/events', eventData, {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                  },
+                  withCredentials: true
+              });
 
-                // Prepare the wishlist data
-                const wishlistData = {
-                    event_name: this.event_name,
-                    event_type: this.event_type,
-                    event_theme: this.event_theme,
-                    event_color: this.event_color,
-                    package_id: this.selectedPackage.package_id,
-                    suppliers: allSuppliers,
-                    venues: venues,
-                    total_price: this.calculatedTotalPrice,
-                    schedule: this.eventSchedule.date,
-                    start_time: this.eventSchedule.start_time,
-                    end_time: this.eventSchedule.end_time,
-                };
+              if (!eventResponse.data.success) {
+                  throw new Error(eventResponse.data.message || 'Failed to create event');
+              }
 
-                console.log('Submitting wishlist data:', wishlistData);
+              // Now create the wishlist package
+              const wishlistData = {
+                  events_id: eventResponse.data.events_id,
+                  package_name: this.selectedPackage.package_name,
+                  capacity: this.selectedPackage.capacity,
+                  description: this.selectedPackage.description,
+                  venue_id: this.selectedPackage.venue_id,
+                  gown_package_id: this.selectedPackage.gown_package_id,
+                  additional_capacity_charges: this.selectedPackage.additional_capacity_charges,
+                  charge_unit: this.selectedPackage.charge_unit,
+                  total_price: this.calculatedTotalPrice,
+                  event_type_id: this.selectedPackage.event_type_id,
+                  suppliers: suppliers,
+                  outfits: outfits,
+                  services: services
+              };
+                  
+              console.log('Submitting wishlist data:', wishlistData);
 
-                // Make API call to save wishlist with authentication
-                const response = await axios.post('http://127.0.0.1:5000/wishlist', wishlistData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+              // Make API call to save wishlist with authentication
+              const response = await axios.post('http://127.0.0.1:5000/wishlist-packages', wishlistData, {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                  },
+                  withCredentials: true
+              });
 
-                if (response.status === 201) {
-                    this.showAlert = true;
-                    setTimeout(() => {
-                        this.showAlert = false;
-                        this.$router.push('/booked-services');
-                    }, 2000);
-                } else {
-                    throw new Error(response.data.message || 'Failed to create wishlist');
-                }
-
-            } catch (error) {
-                console.error('Error submitting wishlist:', error);
-                alert('Failed to create wishlist: ' + (error.response?.data?.message || error.message));
-            }
-        },
-
-
+              if (response.data.success) {
+                  alert('Wishlist submitted successfully!');
+                  this.$router.push('/booked-services');
+              } else {
+                  // If wishlist creation fails, delete the event we just created
+                  await axios.delete(`http://127.0.0.1:5000/events/${eventResponse.data.events_id}`, {
+                      headers: {
+                          'Authorization': `Bearer ${token}`
+                      },
+                      withCredentials: true
+                  });
+                  throw new Error(response.data.message || 'Failed to create wishlist');
+              }
+          } catch (error) {
+              console.error('Error submitting wishlist:', error);
+              alert('Failed to create wishlist: ' + (error.response?.data?.message || error.message));
+          }
+      },
 
     
     addSupplier(type) {

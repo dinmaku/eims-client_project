@@ -656,65 +656,136 @@ def get_package_details_by_id(package_id):
 
 
 
-def add_to_wishlist(userid, event_data):
+def add_event_item(userid, event_name, event_type, event_theme, event_color, 
+                  package_id, suppliers, schedule=None, start_time=None, 
+                  end_time=None, status='Wishlist', total_price=0, outfits=None, 
+                  services=None, additional_items=None):
+    """Add a new event with its package configuration"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     try:
-        # Start a transaction
         cursor.execute("BEGIN")
-        
+
+        # Ensure numeric values are properly formatted
+        total_price = float(total_price) if total_price is not None else 0
+
         # Insert into events table
         cursor.execute("""
             INSERT INTO events (
-                userid, event_name, event_type, event_theme, event_color,
-                package_id, schedule, start_time, end_time, status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Wishlist'
-            ) RETURNING events_id
+                userid, event_name, event_type, event_theme, event_color, 
+                package_id, schedule, start_time, end_time, status,
+                total_price
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+            RETURNING events_id
         """, (
-            userid, event_data['event_name'], event_data['event_type'],
-            event_data['event_theme'], event_data['event_color'],
-            event_data['package_id'], event_data['schedule'], 
-            event_data['start_time'], event_data['end_time']
+            userid, event_name, event_type, event_theme, event_color, 
+            package_id, schedule, start_time, end_time, status,
+            total_price
         ))
-        
         events_id = cursor.fetchone()[0]
 
-        # Process suppliers
-        for supplier in event_data.get('suppliers', []):
-            if not supplier.get('is_removed'):  # Don't add removed suppliers
-                cursor.execute("""
-                    INSERT INTO event_suppliers (
-                        events_id, supplier_id, is_modified,
-                        modified_price, external_supplier_name, 
-                        external_supplier_contact, external_supplier_price
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    events_id,
-                    supplier.get('supplier_id'),
-                    supplier.get('is_modified', False) or supplier.get('is_added', False),
-                    supplier.get('price'),
-                    supplier.get('external_supplier_name'),
-                    supplier.get('external_supplier_contact'),
-                    supplier.get('external_supplier_price')
-                ))
+        # Create package configuration if package_id is provided
+        if package_id:
+            cursor.execute("""
+                INSERT INTO event_package_configurations (events_id, package_id)
+                VALUES (%s, %s)
+                RETURNING config_id
+            """, (events_id, package_id))
+            config_id = cursor.fetchone()[0]
 
-        # Process venues
-        for venue in event_data.get('venues', []):
-            if not venue.get('is_removed'):  # Don't add removed venues
+            # Store package suppliers
+            if suppliers:
+                for supplier in suppliers:
+                    if not supplier:  # Skip if supplier is None
+                        continue
+                    cursor.execute("""
+                        INSERT INTO event_package_suppliers (
+                            config_id, supplier_id, original_price, modified_price,
+                            is_modified, is_removed, remarks
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        config_id,
+                        supplier.get('supplier_id'),
+                        float(supplier.get('original_price', 0) or 0),
+                        float(supplier.get('modified_price', 0) or 0),
+                        supplier.get('is_modified', False),
+                        supplier.get('is_removed', False),
+                        supplier.get('remarks', '')
+                    ))
+
+            # Store package outfits
+            if outfits:
+                for outfit in outfits:
+                    if not outfit:  # Skip if outfit is None
+                        continue
+                    cursor.execute("""
+                        INSERT INTO event_package_outfits (
+                            config_id, outfit_id, gown_package_id,
+                            original_price, modified_price,
+                            is_modified, is_removed, remarks
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        config_id,
+                        outfit.get('outfit_id'),
+                        outfit.get('gown_package_id'),
+                        float(outfit.get('original_price', 0) or 0),
+                        float(outfit.get('modified_price', 0) or 0),
+                        outfit.get('is_modified', False),
+                        outfit.get('is_removed', False),
+                        outfit.get('remarks', '')
+                    ))
+
+            # Store package services
+            if services:
+                for service in services:
+                    if not service:  # Skip if service is None
+                        continue
+                    if 'package_service_id' in service:
+                        cursor.execute("""
+                            INSERT INTO event_package_services (package_id, package_service_id)
+                            VALUES (%s, %s)
+                        """, (
+                            package_id,
+                            service.get('package_service_id')
+                        ))
+                    else:
+                        cursor.execute("""
+                            INSERT INTO package_service (supplier_id, remarks)
+                            VALUES (%s, %s)
+                            RETURNING package_service_id
+                        """, (
+                            service.get('supplier_id'),
+                            service.get('remarks', '')
+                        ))
+                        package_service_id = cursor.fetchone()[0]
+                        cursor.execute("""
+                            INSERT INTO event_package_services (package_id, package_service_id)
+                            VALUES (%s, %s)
+                        """, (
+                            package_id,
+                            package_service_id
+                        ))
+
+        # Store additional (non-package) items
+        if additional_items:
+            for item in additional_items:
+                if not item:  # Skip if item is None
+                    continue
                 cursor.execute("""
-                    INSERT INTO event_venues (
-                        events_id, venue_id, is_modified,
-                        modified_price
+                    INSERT INTO event_additional_items (
+                        events_id, item_type, item_id, price, remarks
                     )
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s)
                 """, (
                     events_id,
-                    venue['venue_id'],
-                    venue.get('is_modified', False) or venue.get('is_added', False),
-                    venue.get('price')
+                    item.get('item_type'),
+                    item.get('item_id'),
+                    float(item.get('price', 0) or 0),
+                    item.get('remarks', '')
                 ))
 
         cursor.execute("COMMIT")
@@ -722,8 +793,8 @@ def add_to_wishlist(userid, event_data):
 
     except Exception as e:
         cursor.execute("ROLLBACK")
-        logger.error(f"Error in add_to_wishlist: {str(e)}")
-        raise
+        print(f"Error in add_event_item: {str(e)}")  # Add debug print
+        raise e
     finally:
         cursor.close()
         conn.close()
@@ -745,13 +816,61 @@ def get_available_suppliers():
     cursor = conn.cursor()
 
     try:
-        cursor.execute("""
-            SELECT s.supplier_id, u.firstname, u.lastname, s.service, s.price
+        query = """
+            WITH supplier_socials AS (
+                SELECT 
+                    supplier_id,
+                    json_agg(
+                        json_build_object(
+                            'platform', platform,
+                            'handle', handle,
+                            'url', url
+                        )
+                    ) as social_media
+                FROM supplier_social_media
+                GROUP BY supplier_id
+            )
+            SELECT 
+                s.supplier_id,
+                s.service,
+                s.price,
+                s.status,
+                u.userid,
+                u.firstname,
+                u.lastname,
+                u.email,
+                u.contactnumber,
+                u.user_img,
+                u.address,
+                COALESCE(ss.social_media, '[]'::json) as social_media
             FROM suppliers s
             JOIN users u ON s.userid = u.userid
-        """)
+            LEFT JOIN supplier_socials ss ON s.supplier_id = ss.supplier_id
+            ORDER BY s.supplier_id
+        """
+        
+        # Debug logging
+        logging.info("Executing supplier query...")
+        cursor.execute(query)
+        
         columns = [desc[0] for desc in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+        suppliers = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # Debug logging
+        logging.info(f"Found {len(suppliers)} suppliers")
+        if len(suppliers) == 0:
+            logging.info("No suppliers found in the database")
+        else:
+            logging.info(f"First supplier: {suppliers[0]}")
+        
+        # Format the price to ensure it's a float
+        for supplier in suppliers:
+            supplier['price'] = float(supplier['price']) if supplier['price'] else 0.0
+            
+        return suppliers
+    except Exception as e:
+        logging.error(f"Error in get_available_suppliers: {e}")
+        raise
     finally:
         cursor.close()
         conn.close()
@@ -1017,6 +1136,145 @@ def get_event_modifications(events_id):
                 'supplier_identifier': c[4]
             } for c in customizations]
         }
+    finally:
+        cursor.close()
+        conn.close()
+
+def create_wishlist_package(events_id, package_data):
+    """Create a new wishlist package for an event"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Insert the main wishlist package
+        cursor.execute("""
+            INSERT INTO wishlist_packages (
+                events_id, package_name, capacity, description, venue_id,
+                gown_package_id, additional_capacity_charges, charge_unit,
+                total_price, event_type_id, status
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) RETURNING wishlist_id
+        """, (
+            events_id,
+            package_data.get('package_name'),
+            package_data.get('capacity'),
+            package_data.get('description'),
+            package_data.get('venue_id'),
+            package_data.get('gown_package_id'),
+            package_data.get('additional_capacity_charges', 0),
+            package_data.get('charge_unit', 1),
+            package_data.get('total_price', 0),
+            package_data.get('event_type_id'),
+            package_data.get('status', 'Active')
+        ))
+        
+        wishlist_id = cursor.fetchone()[0]
+        
+        # Add services if provided
+        if package_data.get('services'):
+            for service in package_data['services']:
+                cursor.execute("""
+                    INSERT INTO wishlist_additional_services (wishlist_id, add_service_id, price, remarks)
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    wishlist_id, 
+                    service['add_service_id'],
+                    service.get('price', 0),
+                    service.get('remarks', '')
+                ))
+        
+        # Add suppliers if provided
+        if package_data.get('suppliers'):
+            for supplier in package_data['suppliers']:
+                cursor.execute("""
+                    INSERT INTO wishlist_suppliers (wishlist_id, supplier_id, price, remarks)
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    wishlist_id,
+                    supplier['supplier_id'],
+                    supplier.get('price'),
+                    supplier.get('remarks')
+                ))
+        
+        # Add outfits if provided
+        if package_data.get('outfits'):
+            for outfit in package_data['outfits']:
+                cursor.execute("""
+                    INSERT INTO wishlist_outfits (wishlist_id, outfit_id, gown_package_id, price, remarks)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    wishlist_id,
+                    outfit.get('outfit_id'),
+                    outfit.get('gown_package_id'),
+                    outfit.get('price'),
+                    outfit.get('remarks')
+                ))
+        
+        conn.commit()
+        return wishlist_id
+        
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error creating wishlist package: {str(e)}")
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+def initialize_test_suppliers():
+    """Initialize test suppliers for development purposes"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # First, create test users
+        test_users = [
+            ('John', 'Doe', 'john.doe@test.com', '+1234567890', 'password123', 'Supplier', None, '123 Main St', 'johndoe'),
+            ('Jane', 'Smith', 'jane.smith@test.com', '+1234567891', 'password123', 'Supplier', None, '456 Oak St', 'janesmith'),
+            ('Mike', 'Johnson', 'mike.j@test.com', '+1234567892', 'password123', 'Supplier', None, '789 Pine St', 'mikej')
+        ]
+
+        for user in test_users:
+            cursor.execute("""
+                INSERT INTO users (firstname, lastname, email, contactnumber, password, user_type, user_img, address, username)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (email) DO NOTHING
+                RETURNING userid
+            """, user)
+            
+            userid = cursor.fetchone()
+            if userid:
+                # Add supplier entry
+                cursor.execute("""
+                    INSERT INTO suppliers (userid, service, price, status)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING
+                    RETURNING supplier_id
+                """, (userid[0], f"Event Service by {user[0]}", 5000.00, 'active'))
+                
+                supplier_id = cursor.fetchone()
+                if supplier_id:
+                    # Add social media for the supplier
+                    social_media = [
+                        ('facebook', f'{user[8]}', f'https://facebook.com/{user[8]}'),
+                        ('instagram', f'{user[8]}_events', f'https://instagram.com/{user[8]}_events'),
+                    ]
+                    
+                    for platform, handle, url in social_media:
+                        cursor.execute("""
+                            INSERT INTO supplier_social_media (supplier_id, platform, handle, url)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING
+                        """, (supplier_id[0], platform, handle, url))
+
+        conn.commit()
+        logging.info("Test suppliers initialized successfully")
+        return True
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error initializing test suppliers: {e}")
+        return False
     finally:
         cursor.close()
         conn.close()
