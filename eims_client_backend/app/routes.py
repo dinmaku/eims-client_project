@@ -8,7 +8,7 @@ from .models import (
     get_package_details_by_id, get_booked_outfits_by_user, get_packages, 
     get_available_suppliers, get_available_venues, get_available_gown_packages, 
     get_event_types, get_all_additional_services, get_booked_schedules, add_event_item,
-    create_wishlist_package, initialize_test_suppliers
+    create_wishlist_package, initialize_test_suppliers, get_user_profile_by_id
 )
 import logging
 import jwt
@@ -50,7 +50,14 @@ def init_routes(app):
             print(f"Error during login: {e}")
             return jsonify({'message': 'An error occurred during login.'}), 500
 
-
+    @app.route('/login', methods=['OPTIONS'])
+    def login_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     @app.route('/register', methods=['POST'])
     def register():
@@ -75,9 +82,14 @@ def init_routes(app):
         else:
             return jsonify({'message': 'Email already exists!'}), 409
 
-
-
-
+    @app.route('/register', methods=['OPTIONS'])
+    def register_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     @app.route('/available-suppliers', methods=['GET'])
     @jwt_required()
@@ -121,9 +133,6 @@ def init_routes(app):
             app.logger.error(f"Error fetching package details: {e}")
             return jsonify({'message': 'An error occurred while fetching package details'}), 500
 
-
-
-
     @app.route('/wishlist', methods=['GET'])
     @jwt_required()
     def get_wishlist():
@@ -134,7 +143,6 @@ def init_routes(app):
 
         return jsonify(wishlist), 200
 
-    
     SECRET_KEY = os.getenv('eims', 'fallback_jwt_secret')
 
 # Decorator to protect routes and check token
@@ -177,11 +185,28 @@ def init_routes(app):
         new_access_token = create_access_token(identity=current_user)
         return jsonify(access_token=new_access_token)
 
+    @app.route('/refresh', methods=['OPTIONS'])
+    def refresh_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     @app.route('/logout', methods=['POST'])
     def logout():
        
         return jsonify({'message': 'Logged out successfully'}), 200
+
+    @app.route('/logout', methods=['OPTIONS'])
+    def logout_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     @app.route('/outfits', methods=['POST'])
     @jwt_required()
@@ -209,7 +234,6 @@ def init_routes(app):
             return jsonify({'message': f'Error: {str(e)}'}), 500
 
     @app.route('/outfits', methods=['GET'])
-    @jwt_required()
     def get_all_outfits():
         try:
             outfits = get_outfits()
@@ -250,7 +274,6 @@ def init_routes(app):
         except Exception as e:
             return jsonify({'message': f'Error booking outfit: {str(e)}'}), 500
 
-      
     @app.route('/booked-wishlist', methods=['GET'])
     @jwt_required()
     def get_user_booked_wishlist():
@@ -263,7 +286,6 @@ def init_routes(app):
             return jsonify(booked_wishlist), 200
         except Exception as e:
             return jsonify({'message': f'Error fetching booked wishlist: {str(e)}'}), 500
-
 
     @app.route('/booked_wishlist/<int:events_id>', methods=['DELETE'])
     @jwt_required()  # Assuming you're using JWT for authorization
@@ -297,7 +319,6 @@ def init_routes(app):
             # If there's an error, return a message with the error details
             return jsonify({'message': f'Error fetching booked outfits: {str(e)}'}), 500
 
-
     #packages routes
     @app.route('/created-packages', methods=['GET'])
     @jwt_required()
@@ -310,7 +331,6 @@ def init_routes(app):
             app.logger.error(f"Error fetching packages: {e}")
             return jsonify({'message': 'An error occurred while fetching packages'}), 500
 
-
     @app.route('/event-types', methods=['GET'])
     def get_event_types_route():
         try:
@@ -320,9 +340,7 @@ def init_routes(app):
             app.logger.error(f"Error fetching event types: {e}")
             return jsonify({"error": str(e)}), 500
 
-
     #additional services routes
-
     @app.route('/created-services', methods=['GET'])
     @jwt_required()
     def get_services_route():
@@ -342,8 +360,6 @@ def init_routes(app):
         except Exception as e:
             app.logger.error(f"Error in get_booked_schedules route: {str(e)}")
             return jsonify({'error': str(e)}), 422
-
-
 
     @app.route('/events', methods=['POST', 'OPTIONS'])
     @jwt_required()
@@ -385,7 +401,8 @@ def init_routes(app):
                 'start_time': data.get('start_time'),
                 'end_time': data.get('end_time'),
                 'status': data.get('status', 'Wishlist'),
-                'total_price': data.get('total_price', 0)
+                'total_price': data.get('total_price', 0),
+                'booking_type': data.get('booking_type', 'Online')  # Add booking_type with default value 'Online'
             }
 
             # Package configuration data
@@ -426,8 +443,6 @@ def init_routes(app):
             response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
             response.headers.add('Access-Control-Allow-Credentials', 'true')
             return response, 500
-
-
 
     @app.route('/wishlist-packages', methods=['POST', 'OPTIONS'])
     @jwt_required()
@@ -512,6 +527,15 @@ def init_routes(app):
             response.headers.add('Access-Control-Allow-Credentials', 'true')
             return response, 500
 
+    @app.route('/api/suppliers', methods=['OPTIONS'])
+    def suppliers_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
     @app.route('/api/init-test-suppliers', methods=['POST'])
     def init_test_suppliers():
         try:
@@ -528,6 +552,81 @@ def init_routes(app):
                 }), 500
         except Exception as e:
             logging.error(f"Error initializing test suppliers: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': str(e)
+            }), 500
+
+    @app.route('/api/user/profile', methods=['OPTIONS'])
+    def user_profile_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    @app.route('/api/user/update-profile', methods=['OPTIONS'])
+    def update_profile_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'PUT,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    @app.route('/api/user/update-profile-picture', methods=['OPTIONS'])
+    def update_profile_picture_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    @app.route('/api/user/profile', methods=['GET'])
+    @jwt_required()
+    def get_user_profile():
+        try:
+            # Get the current user's email from JWT token
+            email = get_jwt_identity()
+            logging.info(f"Fetching profile for user email: {email}")
+            
+            # Get user ID from email
+            userid = get_user_id_by_email(email)
+            if not userid:
+                logging.warning(f"No user found for email: {email}")
+                return jsonify({
+                    'status': 'error',
+                    'message': 'User not found'
+                }), 404
+
+            # Query the database for user profile data
+            user_data = get_user_profile_by_id(userid)
+            logging.info(f"Retrieved user data: {user_data}")
+            
+            if not user_data:
+                logging.warning(f"No profile found for user ID: {userid}")
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Profile not found'
+                }), 404
+
+            # Ensure all required fields are present
+            required_fields = ['first_name', 'last_name', 'email', 'contact_number', 'profile_picture_url']
+            for field in required_fields:
+                if field not in user_data:
+                    logging.warning(f"Missing required field in user data: {field}")
+                    user_data[field] = None
+
+            response = jsonify({
+                'status': 'success',
+                'data': user_data
+            })
+            return response, 200
+
+        except Exception as e:
+            logging.error(f"Error fetching user profile: {e}")
             return jsonify({
                 'status': 'error',
                 'message': str(e)

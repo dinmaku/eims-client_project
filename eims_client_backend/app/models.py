@@ -76,67 +76,68 @@ def get_user_wishlist(userid):
         cursor.execute("""
             WITH outfit_details AS (
                 SELECT 
-                    gpo.gown_package_id,
-                    array_agg(o.outfit_id ORDER BY o.outfit_id) as outfit_ids,
-                    array_agg(o.outfit_name ORDER BY o.outfit_id) as outfit_names,
-                    array_agg(o.outfit_type ORDER BY o.outfit_id) as outfit_types,
-                    array_agg(o.outfit_color ORDER BY o.outfit_id) as outfit_colors,
-                    array_agg(o.outfit_desc ORDER BY o.outfit_id) as outfit_descriptions,
-                    array_agg(o.rent_price ORDER BY o.outfit_id) as outfit_prices,
-                    array_agg(o.outfit_img ORDER BY o.outfit_id) as outfit_images
-                FROM gown_package_outfits gpo
-                JOIN outfits o ON gpo.outfit_id = o.outfit_id
-                GROUP BY gpo.gown_package_id
+                    wo.wishlist_id,
+                    array_agg(
+                        (o.outfit_id, o.outfit_name, o.outfit_type, o.outfit_color, o.outfit_desc, wo.price, o.outfit_img, wo.status, wo.remarks)::record
+                        ORDER BY (o.outfit_id, o.outfit_name, o.outfit_type, o.outfit_color, o.outfit_desc, wo.price, o.outfit_img, wo.status, wo.remarks)
+                    ) as outfit_details
+                FROM wishlist_outfits wo
+                JOIN outfits o ON wo.outfit_id = o.outfit_id
+                GROUP BY wo.wishlist_id
+            ),
+            supplier_details AS (
+                SELECT 
+                    ws.wishlist_id,
+                    array_agg(s.supplier_id ORDER BY s.supplier_id) as supplier_ids,
+                    array_agg(u.firstname || ' ' || u.lastname ORDER BY s.supplier_id) as supplier_names,
+                    array_agg(s.service ORDER BY s.supplier_id) as services,
+                    array_agg(ws.price ORDER BY s.supplier_id) as prices,
+                    array_agg(ws.status ORDER BY s.supplier_id) as statuses,
+                    array_agg(ws.remarks ORDER BY s.supplier_id) as remarks
+                FROM wishlist_suppliers ws
+                JOIN suppliers s ON ws.supplier_id = s.supplier_id
+                JOIN users u ON s.userid = u.userid
+                GROUP BY ws.wishlist_id
+            ),
+            additional_service_details AS (
+                SELECT 
+                    was.wishlist_id,
+                    array_agg(ads.add_service_id ORDER BY ads.add_service_id) as service_ids,
+                    array_agg(ads.add_service_name ORDER BY ads.add_service_id) as service_names,
+                    array_agg(ads.add_service_description ORDER BY ads.add_service_id) as service_descriptions,
+                    array_agg(was.price ORDER BY ads.add_service_id) as service_prices,
+                    array_agg(was.status ORDER BY ads.add_service_id) as service_statuses,
+                    array_agg(was.remarks ORDER BY ads.add_service_id) as service_remarks
+                FROM wishlist_additional_services was
+                JOIN additional_services ads ON was.add_service_id = ads.add_service_id
+                GROUP BY was.wishlist_id
             )
             SELECT 
                 e.events_id, e.event_name, e.event_type, e.event_theme, e.event_color, 
-                e.schedule, e.start_time, e.end_time, e.status,
-                ep.package_id, ep.package_name, ep.capacity, 
-                ep.description AS package_description, ep.total_price,
-                v.venue_name, v.location, 
+                e.schedule, e.start_time, e.end_time, e.status as event_status,
+                wp.wishlist_id, wp.package_name, wp.capacity, wp.description as package_description,
+                wp.total_price, wp.additional_capacity_charges, wp.charge_unit, wp.status as package_status,
+                v.venue_name, v.location, v.venue_price,
                 gp.gown_package_name, gp.gown_package_price,
-                od.outfit_ids,
-                od.outfit_names,
-                od.outfit_types,
-                od.outfit_colors,
-                od.outfit_descriptions,
-                od.outfit_prices,
-                od.outfit_images,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN ps.package_service_id END), NULL) AS internal_package_service_ids,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN ps.supplier_id END), NULL) AS internal_supplier_ids,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN u.firstname || ' ' || u.lastname END), NULL) AS internal_supplier_names,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN s.service END), NULL) AS internal_services,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NOT NULL THEN s.price END), NULL) AS internal_service_prices,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.package_service_id END), NULL) AS external_package_service_ids,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_name END), NULL) AS external_supplier_names,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_contact END), NULL) AS external_supplier_contacts,
-                array_remove(array_agg(DISTINCT CASE WHEN ps.supplier_id IS NULL THEN ps.external_supplier_price END), NULL) AS external_supplier_prices,
-                array_remove(array_agg(DISTINCT ads.add_service_id), NULL) AS additional_service_ids,
-                array_remove(array_agg(DISTINCT ads.add_service_name), NULL) AS additional_service_names,
-                array_remove(array_agg(DISTINCT ads.add_service_description), NULL) AS additional_service_descriptions,
-                array_remove(array_agg(DISTINCT ads.add_service_price), NULL) AS additional_service_prices
+                od.outfit_details,
+                sd.supplier_ids, sd.supplier_names, sd.services, sd.prices as supplier_prices,
+                sd.statuses as supplier_statuses, sd.remarks as supplier_remarks,
+                asd.service_ids, asd.service_names, asd.service_descriptions,
+                asd.service_prices, asd.service_statuses, asd.service_remarks
             FROM events e
-            LEFT JOIN event_packages ep ON e.package_id = ep.package_id
-            LEFT JOIN venues v ON ep.venue_id = v.venue_id
-            LEFT JOIN gown_package gp ON ep.gown_package_id = gp.gown_package_id
-            LEFT JOIN outfit_details od ON gp.gown_package_id = od.gown_package_id
-            LEFT JOIN event_package_services eps ON ep.package_id = eps.package_id
-            LEFT JOIN package_service ps ON eps.package_service_id = ps.package_service_id
-            LEFT JOIN suppliers s ON ps.supplier_id = s.supplier_id
-            LEFT JOIN users u ON s.userid = u.userid
-            LEFT JOIN event_package_additional_services epas ON ep.package_id = epas.package_id
-            LEFT JOIN additional_services ads ON epas.add_service_id = ads.add_service_id
-            WHERE e.userid = %s
-            GROUP BY 
-                e.events_id, ep.package_id, v.venue_name, v.location, 
-                gp.gown_package_name, gp.gown_package_price,
-                od.outfit_ids, od.outfit_names, od.outfit_types, 
-                od.outfit_colors, od.outfit_descriptions, od.outfit_prices, od.outfit_images
+            JOIN wishlist_packages wp ON e.events_id = wp.events_id
+            LEFT JOIN venues v ON wp.venue_id = v.venue_id
+            LEFT JOIN gown_package gp ON wp.gown_package_id = gp.gown_package_id
+            LEFT JOIN outfit_details od ON wp.wishlist_id = od.wishlist_id
+            LEFT JOIN supplier_details sd ON wp.wishlist_id = sd.wishlist_id
+            LEFT JOIN additional_service_details asd ON wp.wishlist_id = asd.wishlist_id
+            WHERE e.userid = %s AND wp.status != 'Cancelled'
+            ORDER BY wp.created_at DESC
         """, (userid,))
+
         columns = [desc[0] for desc in cursor.description]
         wishlist = cursor.fetchall()
 
-        # Convert the result to dictionaries and ensure time objects are strings
         result = []
         for item in wishlist:
             item_dict = dict(zip(columns, item))
@@ -148,63 +149,83 @@ def get_user_wishlist(userid):
                 item_dict['end_time'] = item_dict['end_time'].strftime("%H:%M:%S")
             
             # Format outfit details
-            if item_dict.get('outfit_ids'):
+            if item_dict.get('outfit_details'):
+                logger.info(f"Processing outfits for wishlist. Raw outfit data: {item_dict}")
                 item_dict['outfits'] = [
                     {
-                        'outfit_id': outfit_id,
-                        'outfit_name': name,
-                        'outfit_type': type_,
-                        'outfit_color': color,
-                        'outfit_desc': desc,
-                        'rent_price': price,
-                        'outfit_img': img
+                        'outfit_id': details[0],
+                        'outfit_name': details[1],
+                        'outfit_type': details[2],
+                        'outfit_color': details[3],
+                        'outfit_desc': details[4],
+                        'rent_price': details[5],
+                        'outfit_img': details[6],
+                        'status': details[7],
+                        'remarks': details[8]
                     }
-                    for outfit_id, name, type_, color, desc, price, img in zip(
-                        item_dict['outfit_ids'],
-                        item_dict['outfit_names'],
-                        item_dict['outfit_types'],
-                        item_dict['outfit_colors'],
-                        item_dict['outfit_descriptions'],
-                        item_dict['outfit_prices'],
-                        item_dict['outfit_images']
+                    for details in item_dict['outfit_details']
+                ]
+                logger.info(f"Processed outfits: {item_dict['outfits']}")
+            else:
+                logger.info("No outfit_details found in item_dict")
+                item_dict['outfits'] = []
+
+            # Format supplier details
+            if item_dict.get('supplier_ids'):
+                item_dict['suppliers'] = [
+                    {
+                        'supplier_id': supplier_id,
+                        'name': name,
+                        'service': service,
+                        'price': price,
+                        'status': status,
+                        'remarks': remarks
+                    }
+                    for supplier_id, name, service, price, status, remarks in zip(
+                        item_dict['supplier_ids'],
+                        item_dict['supplier_names'],
+                        item_dict['services'],
+                        item_dict['supplier_prices'],
+                        item_dict['supplier_statuses'],
+                        item_dict['supplier_remarks']
                     )
                 ]
             else:
-                item_dict['outfits'] = []
+                item_dict['suppliers'] = []
 
-            # Clean up outfit temporary fields
-            del item_dict['outfit_ids']
-            del item_dict['outfit_names']
-            del item_dict['outfit_types']
-            del item_dict['outfit_colors']
-            del item_dict['outfit_descriptions']
-            del item_dict['outfit_prices']
-            del item_dict['outfit_images']
-            
             # Format additional services
-            if item_dict['additional_service_ids']:
+            if item_dict.get('service_ids'):
                 item_dict['additional_services'] = [
                     {
                         'add_service_id': service_id,
                         'add_service_name': name,
                         'add_service_description': description,
-                        'add_service_price': price
+                        'add_service_price': price,
+                        'status': status,
+                        'remarks': remarks
                     }
-                    for service_id, name, description, price in zip(
-                        item_dict['additional_service_ids'],
-                        item_dict['additional_service_names'],
-                        item_dict['additional_service_descriptions'],
-                        item_dict['additional_service_prices']
+                    for service_id, name, description, price, status, remarks in zip(
+                        item_dict['service_ids'],
+                        item_dict['service_names'],
+                        item_dict['service_descriptions'],
+                        item_dict['service_prices'],
+                        item_dict['service_statuses'],
+                        item_dict['service_remarks']
                     )
                 ]
             else:
                 item_dict['additional_services'] = []
 
-            # Clean up additional services temporary fields
-            del item_dict['additional_service_ids']
-            del item_dict['additional_service_names']
-            del item_dict['additional_service_descriptions']
-            del item_dict['additional_service_prices']
+            # Clean up temporary fields
+            fields_to_remove = [
+                'outfit_details',
+                'supplier_ids', 'supplier_names', 'services', 'supplier_prices',
+                'supplier_statuses', 'supplier_remarks',
+                'service_ids', 'service_names', 'service_descriptions',
+                'service_prices', 'service_statuses', 'service_remarks'
+            ]
+            for field in fields_to_remove:
+                item_dict.pop(field, None)
 
             result.append(item_dict)
 
@@ -659,7 +680,7 @@ def get_package_details_by_id(package_id):
 def add_event_item(userid, event_name, event_type, event_theme, event_color, 
                   package_id, suppliers, schedule=None, start_time=None, 
                   end_time=None, status='Wishlist', total_price=0, outfits=None, 
-                  services=None, additional_items=None):
+                  services=None, additional_items=None, booking_type='Online'):
     """Add a new event with its package configuration"""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -675,14 +696,14 @@ def add_event_item(userid, event_name, event_type, event_theme, event_color,
             INSERT INTO events (
                 userid, event_name, event_type, event_theme, event_color, 
                 package_id, schedule, start_time, end_time, status,
-                total_price
+                total_price, booking_type
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             RETURNING events_id
         """, (
             userid, event_name, event_type, event_theme, event_color, 
             package_id, schedule, start_time, end_time, status,
-            total_price
+            total_price, booking_type
         ))
         events_id = cursor.fetchone()[0]
 
@@ -1275,6 +1296,173 @@ def initialize_test_suppliers():
         conn.rollback()
         logging.error(f"Error initializing test suppliers: {e}")
         return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_user_by_email(email):
+    """
+    Get user details by email.
+    :param email: User's email address
+    :return: User details as dictionary or None if not found
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            """SELECT userid, firstname, lastname, email, contactnumber, address, 
+                     user_type, user_img, username
+               FROM users 
+               WHERE email = %s""", 
+            (email,)
+        )
+        user = cursor.fetchone()
+        
+        if user:
+            return {
+                'userid': user[0],
+                'firstname': user[1],
+                'lastname': user[2],
+                'email': user[3],
+                'contactnumber': user[4],
+                'address': user[5],
+                'user_type': user[6],
+                'user_img': user[7],
+                'username': user[8]
+            }
+        return None
+    except Exception as e:
+        logger.error(f"Error getting user by email: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+def update_user_profile(userid, firstname, lastname, username, contactnumber, address):
+    """
+    Update user profile information.
+    :param userid: User ID
+    :param firstname: First name
+    :param lastname: Last name
+    :param username: Username
+    :param contactnumber: Contact number
+    :param address: Address
+    :return: True if successful, False otherwise
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            """UPDATE users 
+               SET firstname = %s, lastname = %s, username = %s, contactnumber = %s, address = %s
+               WHERE userid = %s""",
+            (firstname, lastname, username, contactnumber, address, userid)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"Error updating user profile: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def update_user_profile_picture(userid, image_path):
+    """
+    Update user profile picture.
+    :param userid: User ID
+    :param image_path: Path to the uploaded image
+    :return: True if successful, False otherwise
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Log the update attempt
+        logger.info(f"Updating profile picture for user {userid} with path {image_path}")
+        
+        cursor.execute(
+            """UPDATE users 
+               SET user_img = %s
+               WHERE userid = %s
+               RETURNING user_img""",
+            (image_path, userid)
+        )
+        
+        # Get the updated value to confirm it worked
+        updated_path = cursor.fetchone()
+        
+        conn.commit()
+        
+        if updated_path:
+            logger.info(f"Successfully updated profile picture for user {userid}")
+            return True
+        
+        logger.warning(f"Failed to update profile picture: no rows updated for user {userid}")
+        return False
+        
+    except Exception as e:
+        logger.error(f"Error updating user profile picture: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_user_profile_by_id(userid):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            SELECT 
+                userid,
+                firstname,
+                lastname,
+                username,
+                email,
+                contactnumber,
+                address,
+                user_type,
+                user_img
+            FROM users 
+            WHERE userid = %s
+        """, (userid,))
+        
+        row = cursor.fetchone()
+        
+        if row:
+            user_data = {
+                'userid': row[0],
+                'firstname': row[1],
+                'lastname': row[2],
+                'username': row[3],
+                'email': row[4],
+                'contactnumber': row[5],
+                'address': row[6],
+                'user_type': row[7].lower() if row[7] else None,
+                'user_img': row[8]
+            }
+            
+            logger.info(f"Raw user data from database: {user_data}")
+            
+            # If there's no profile picture, use the default
+            if not user_data['user_img']:
+                user_data['user_img'] = "/static/uploads/profile_pics/default-profile.jpg"
+                logger.info("Using default profile picture")
+            
+            logger.info(f"Final user data: {user_data}")
+            return user_data
+            
+        logger.warning(f"No user found with ID: {userid}")
+        return None
+
+    except Exception as e:
+        logger.error(f"Error in get_user_profile_by_id: {e}")
+        return None
     finally:
         cursor.close()
         conn.close()

@@ -18,80 +18,65 @@
         No suppliers available at the moment.
       </div>
 
-      <div v-if="suppliers.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="suppliers.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Supplier Card -->
-        <div v-for="supplier in suppliers" :key="supplier.supplier_id" 
-             class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 w-full h-[600px] flex flex-col">
-          <!-- Image Container - Fixed Height -->
-          <div class="h-48 overflow-hidden">
-            <img 
-              :src="supplier.user_img || '/default-profile.jpg'" 
-              :alt="supplier.firstname + ' ' + supplier.lastname"
-              class="w-full h-full object-cover"
-              @error="handleImageError"
-            />
-          </div>
-          <!-- Content Container - Scrollable if content overflows -->
-          <div class="p-6 flex-1 flex flex-col overflow-auto">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">
-              {{ supplier.firstname || 'Unknown' }} {{ supplier.lastname || '' }}
-            </h2>
-            <div class="space-y-2 flex-1 overflow-auto">
-              <p v-if="supplier.service" class="text-gray-600">
-                <span class="font-medium">Service:</span> {{ supplier.service }}
-              </p>
-              <p v-if="supplier.price" class="text-gray-600">
-                <span class="font-medium">Price:</span> ₱{{ supplier.price.toLocaleString() }}
-              </p>
-              <p v-if="supplier.contactnumber" class="text-gray-600">
-                <span class="font-medium">Contact:</span> {{ supplier.contactnumber }}
-              </p>
-              <p v-if="supplier.email" class="text-gray-600">
-                <span class="font-medium">Email:</span> {{ supplier.email }}
-              </p>
-              <p v-if="supplier.address" class="text-gray-600">
-                <span class="font-medium">Address:</span> {{ supplier.address }}
-              </p>
-              <p v-if="supplier.status" class="text-gray-600">
-                <span class="font-medium">Status:</span> 
+        <div v-for="supplier in suppliers" :key="supplier.supplier_id" class="max-w-xs">
+          <div class="bg-white shadow-xl rounded-lg py-3">
+            <div class="photo-wrapper p-2">
+              <img 
+                class="w-32 h-32 rounded-full mx-auto object-cover" 
+                :src="supplier.user_img || '/default-profile.jpg'" 
+                :alt="supplier.firstname + ' ' + supplier.lastname"
+                @error="handleImageError"
+              />
+            </div>
+            <div class="p-2">
+              <h3 class="text-center text-xl text-gray-900 font-medium leading-8">
+                {{ supplier.firstname || 'Unknown' }} {{ supplier.lastname || '' }}
+              </h3>
+              <div class="text-center text-gray-400 text-xs font-semibold">
+                <p>{{ supplier.service || 'Service Provider' }}</p>
+              </div>
+              <table class="text-xs my-3">
+                <tbody>
+                  <tr v-if="supplier.address">
+                    <td class="px-2 py-2 text-gray-500 font-semibold">Address</td>
+                    <td class="px-2 py-2">{{ supplier.address }}</td>
+                  </tr>
+                  <tr v-if="supplier.contactnumber">
+                    <td class="px-2 py-2 text-gray-500 font-semibold">Phone</td>
+                    <td class="px-2 py-2">{{ supplier.contactnumber }}</td>
+                  </tr>
+                  <tr v-if="supplier.email">
+                    <td class="px-2 py-2 text-gray-500 font-semibold">Email</td>
+                    <td class="px-2 py-2">{{ supplier.email }}</td>
+                  </tr>
+                  <tr v-if="supplier.price">
+                    <td class="px-2 py-2 text-gray-500 font-semibold">Price</td>
+                    <td class="px-2 py-2">₱{{ supplier.price.toLocaleString() }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="text-center my-3">
+                <a 
+                  class="text-xs text-indigo-500 italic hover:underline hover:text-indigo-600 font-medium" 
+                  href="#"
+                  @click.prevent="viewSupplierDetails(supplier)"
+                >
+                  View Profile
+                </a>
+              </div>
+
+              <!-- Status Badge -->
+              <div v-if="supplier.status" class="text-center">
                 <span :class="{
                   'text-green-600': supplier.status.toLowerCase() === 'active',
                   'text-red-600': supplier.status.toLowerCase() === 'inactive'
-                }">
+                }" class="text-xs font-semibold">
                   {{ supplier.status }}
                 </span>
-              </p>
-            </div>
-            
-            <!-- Social Media Links - Fixed at Bottom -->
-            <div v-if="supplier.social_media && supplier.social_media.length > 0" class="mt-4">
-              <p class="font-medium text-gray-700 mb-2">Social Media:</p>
-              <div class="flex space-x-3">
-                <a v-for="social in supplier.social_media" 
-                   :key="social.platform + social.handle"
-                   :href="social.url || getSocialUrl(social.platform, social.handle)"
-                   target="_blank"
-                   class="text-gray-600 hover:opacity-80 transition-opacity"
-                   :title="social.platform">
-                  <img 
-                    :src="getSocialIcon(social.platform)" 
-                    :alt="social.platform"
-                    class="w-6 h-6 object-contain"
-                  />
-                </a>
               </div>
-            </div>
-
-            <!-- Buttons - Fixed at Bottom -->
-            <div class="mt-4 space-y-2">
-              <button 
-                v-if="supplier.status?.toLowerCase() === 'active'"
-                class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300">
-                Contact Supplier
-              </button>
-              <button class="w-full border border-blue-600 text-blue-600 py-2 px-4 rounded-md hover:bg-blue-50 transition-colors duration-300">
-                View Details
-              </button>
             </div>
           </div>
         </div>

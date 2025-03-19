@@ -3,9 +3,6 @@
       <!-- Header with responsive layout -->
       <div class="flex justify-between items-center w-full h-20 bg-gray-100 shadow-lg antialiased mt-28 px-4 sm:px-6 lg:px-8">
         <h1 class="flex font-medium font-amaticBold text-2xl ml-5 sm:text-xl">My Booked Schedule</h1>
-        <button class="flex justify-end items-center p-2 text-md font-semibold font-amaticRegular h-10 bg-gray-200 rounded-md shadow-md transform-transition duration-300 transform hover:scale-110 hover:bg-blue-200" @click="toggleSidebar">
-          Add events
-        </button>
       </div>
   
       <!-- Sidebar (will slide in/out based on isSidebarOpen) -->

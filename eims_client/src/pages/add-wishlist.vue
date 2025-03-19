@@ -1289,6 +1289,7 @@ export default {
                   event_type: this.event_type,
                   event_theme: this.event_theme,
                   event_color: this.event_color,
+                  booking_type: 'Online', // Add the booking_type field
                   schedule: this.eventSchedule.date,
                   start_time: this.eventSchedule.start_time,
                   end_time: this.eventSchedule.end_time,
@@ -1412,6 +1413,9 @@ export default {
         const supplierData = {
             supplier_id: null, // External suppliers don't have an internal ID
             name: this.externalSupplierData.name,
+            firstname: '',
+            lastname: '',
+            supplier_name: this.externalSupplierData.name,
             price: parseFloat(this.externalSupplierData.price),
             type: 'external',
             external_supplier_contact: this.externalSupplierData.contact,
@@ -1419,6 +1423,8 @@ export default {
             external_supplier_price: parseFloat(this.externalSupplierData.price),
             remarks: this.externalSupplierData.remarks
         };
+
+        console.log('Adding external supplier with data:', supplierData);
 
         this.inclusions = [...this.inclusions, {
             type: 'supplier',
@@ -1524,13 +1530,23 @@ export default {
           );
 
           const price = parseFloat(this.selectedSupplier.price || 0);
+          
+          // Create a comprehensive supplier data object with all possible name fields
           const supplierData = {
               supplier_id: this.selectedSupplier.supplier_id,
-              name: this.selectedSupplier.name || this.selectedSupplier.supplier_name,
+              firstname: this.selectedSupplier.firstname || '',
+              lastname: this.selectedSupplier.lastname || '',
+              name: this.selectedSupplier.name || 
+                    this.selectedSupplier.supplier_name || 
+                    `${this.selectedSupplier.firstname || ''} ${this.selectedSupplier.lastname || ''}`.trim(),
+              supplier_name: this.selectedSupplier.supplier_name || 
+                            `${this.selectedSupplier.firstname || ''} ${this.selectedSupplier.lastname || ''}`.trim(),
               service_type: this.selectedSupplierType,
               price: price,
               type: this.selectedSupplier.type || 'internal'
           };
+          
+          console.log('Adding supplier with data:', supplierData);
           
           this.inclusions.push({
               type: 'supplier',
@@ -1694,20 +1710,32 @@ addSelectedService() {
                       return;
                   }
 
+                  // Ensure all name fields are set for external suppliers
                   this.editingInclusion.data.name = this.editingInclusion.data.external_supplier_name;
+                  this.editingInclusion.data.supplier_name = this.editingInclusion.data.external_supplier_name;
+                  this.editingInclusion.data.firstname = '';
+                  this.editingInclusion.data.lastname = '';
                   const price = parseFloat(this.editingInclusion.data.external_supplier_price);
                   this.editingInclusion.data.price = price;
               } else {
                   const selectedSupplier = this.availableSuppliers.find(s => s.supplier_id === this.editingInclusion.data.supplier_id);
                   if (selectedSupplier) {
+                      // Create a comprehensive supplier data object with all name fields
                       this.editingInclusion.data = {
                           ...selectedSupplier,
                           supplier_id: selectedSupplier.supplier_id,
-                          firstname: selectedSupplier.firstname,
-                          lastname: selectedSupplier.lastname,
+                          firstname: selectedSupplier.firstname || '',
+                          lastname: selectedSupplier.lastname || '',
+                          name: selectedSupplier.name || 
+                                selectedSupplier.supplier_name || 
+                                `${selectedSupplier.firstname || ''} ${selectedSupplier.lastname || ''}`.trim(),
+                          supplier_name: selectedSupplier.supplier_name || 
+                                        `${selectedSupplier.firstname || ''} ${selectedSupplier.lastname || ''}`.trim(),
                           price: parseFloat(selectedSupplier.price || 0),
                           type: 'internal'
                       };
+                      
+                      console.log('Updated internal supplier data:', this.editingInclusion.data);
                   }
               }
 
@@ -1765,15 +1793,24 @@ addSelectedService() {
                   return `${inclusion.data.venue_name || inclusion.data.name || 'Unknown Venue'}`;
               case 'outfit':
                   return `${inclusion.data.gown_package_name || inclusion.data.name || inclusion.data.outfit_name || 'Unknown Outfit'}`;
-                  case 'supplier':
-                      if (inclusion.data.type === 'external') {
-                          return `${inclusion.data.external_supplier_name} (${inclusion.serviceType})`;
-                      } else {
-                          const firstName = inclusion.data.firstname || '';
-                          const lastName = inclusion.data.lastname || '';
-                          return `${firstName} ${lastName}`.trim() || 'Unknown Supplier' + ` (${inclusion.serviceType})`;
-                      }
-                    case 'service':
+              case 'supplier':
+                  if (inclusion.data.type === 'external') {
+                      return `${inclusion.data.external_supplier_name || 'External Supplier'} (${inclusion.serviceType || 'Service'})`;
+                  } else {
+                      // Check all possible name fields
+                      const name = inclusion.data.name || '';
+                      const supplierName = inclusion.data.supplier_name || '';
+                      const firstName = inclusion.data.firstname || '';
+                      const lastName = inclusion.data.lastname || '';
+                      
+                      // Use the first available name format in order of preference
+                      if (name) return `${name} (${inclusion.serviceType || 'Service'})`;
+                      if (supplierName) return `${supplierName} (${inclusion.serviceType || 'Service'})`;
+                      if (firstName || lastName) return `${firstName} ${lastName} (${inclusion.serviceType || 'Service'})`.trim();
+                      
+                      return `Supplier (${inclusion.serviceType || 'Service'})`;
+                  }
+              case 'service':
                   return inclusion.data.add_service_name || 'Unknown Service';
               default:
                   return 'Unknown Item';

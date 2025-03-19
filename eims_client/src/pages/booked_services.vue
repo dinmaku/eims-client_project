@@ -7,88 +7,55 @@
             </div>
 
             <div class="flex flex-col md:flex-row m-4 md:m-20 mt-4 md:mt-10">
-                <div class="flex flex-col items-start space-y-4 mt-5 md:mt-10">
-                    <button
-                        @click="displayEventSection"
-                        :class="{
-                            'bg-gray-100 text-black shadow-lg': events_navigation,
-                            'text-black': !events_navigation
-                        }"
-                        class="flex items-center px-3 py-2 md:px-4 md:py-1 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                    <img src="/img/booking.png" alt="Event Icon" class="h-5 w-5 md:h-7 md:w-7 mr-2" />
-                        Booked Event
-                    </button>
-
-                    <button
-                         @click="displayOutfitsSection"
-                        :class="{
-                            'bg-gray-100 text-black shadow-lg': displayOutfits,
-                            'text-black': !displayOutfits
-                        }"
-                        class="flex items-center px-3 py-2 md:px-4 md:py-2 rounded-md text-base md:text-lg font-medium hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                    <img src="/img/booked-gown.png" alt="Event Icon" class="h-6 w-6 md:h-9 md:w-9 mr-2" />
-                        
-                        Gown Rental
-                    </button>
-                </div>
-
+              
                 <div class="flex flex-col items-center w-full mt-4 md:mt-0 md:ml-16 relative">
                     <div class="absolute top-2 sm:top-1 right-2 sm:right-24 z-10 w-full md:w-auto">  
                     <div v-if="events_navigation" class="flex flex-wrap items-center justify-center space-x-2 md:space-x-10 bg-gray-50 px-3 md:px-5 py-2 rounded-lg shadow-lg">
                         <button
-                            @click="displayWishlist = !displayWishlist"
+                            @click="setActiveNav('wishlist')"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': displayWishlist,
-                                'text-gray-600': !displayWishlist
+                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'wishlist',
+                                'text-gray-600': activeNavButton !== 'wishlist'
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
                             Wishlist
                         </button>
                         <button
-                            @click="displayEvents = !displayEvents"
+                            @click="setActiveNav('events')"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': displayEvents,
-                                'text-gray-600': !displayEvents
+                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'events',
+                                'text-gray-600': activeNavButton !== 'events'
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
-                        
                             Events
                         </button>
-
-                        <!-- Completed Button -->
                         <button
-                           @click="displayCompleted = !displayCompleted"
+                            @click="setActiveNav('completed')"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': displayCompleted,
-                                'text-gray-600': !displayCompleted
+                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'completed',
+                                'text-gray-600': activeNavButton !== 'completed'
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
                             Completed
                         </button>
-
-                        <!-- Rated Button -->
                         <button
-                            @click="displayRated = !displayRated"
+                            @click="setActiveNav('rated')"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': displayRated,
-                                'text-gray-600': !displayRated
+                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'rated',
+                                'text-gray-600': activeNavButton !== 'rated'
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
                             Rated
                         </button>
-
-                        <!-- Canceled Button -->
                         <button
-                            @click="displayAll = !displayAll"
+                            @click="setActiveNav('canceled')"
                             :class="{
-                                'text-blue-600 border-b-2 border-blue-600': displayAll,
-                                'text-gray-600': !displayAll
+                                'text-blue-600 border-b-2 border-blue-600': activeNavButton === 'canceled',
+                                'text-gray-600': activeNavButton !== 'canceled'
                             }"
                             class="text-sm md:text-md hover:text-blue-500 px-2 py-1 md:px-4 md:py-3"
                         >
@@ -120,13 +87,13 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(item, index) in bookedWishlist" :key="index">
+                                    <tr v-for="(item, index) in filteredWishlist" :key="index">
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_name }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_type }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.event_theme }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ item.venue_name }}</td>
                                         <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">{{ formatPrice(item.total_price) }} php</td>
-                                        <td class="px-2  md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">
+                                        <td class="px-2 md:px-6 py-2 md:py-4 text-left text-xs md:text-sm text-gray-800">
                                             <button @click="displayWishlistDetails(item)" class="text-blue-500 hover:text-blue-700">View</button>
                                         </td>
                                     </tr>
@@ -192,40 +159,46 @@
                     <p>{{ selectedWishlist.event_color }}</p>
                 </div>
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
-                    <p class="text-gray-700">Venue</p>
-                    <p>{{ selectedWishlist.venue_name }}</p>
+                    <p class="text-gray-700">Schedule Details</p>
+                    <p>Date: {{ selectedWishlist.schedule || 'Not set' }}</p>
+                    <p>Start Time: {{ selectedWishlist.start_time || 'Not set' }}</p>
+                    <p>End Time: {{ selectedWishlist.end_time || 'Not set' }}</p>
                 </div>
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
-                        <p class="text-gray-700">Package Name</p>
-                        <p>{{ selectedWishlist.package_name }}</p>
-                    </div>
+                    <p class="text-gray-700">Venue</p>
+                    <p>{{ selectedWishlist.venue_name }}</p>
+                    <p class="text-sm text-gray-600">Location: {{ selectedWishlist.location }}</p>
+                    <p class="text-sm text-gray-600">Price: {{ formatPrice(selectedWishlist.venue_price) }} php</p>
+                </div>
+                <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
+                    <p class="text-gray-700">Package Details</p>
+                    <p>Name: {{ selectedWishlist.package_name }}</p>
+                    <p>Capacity: {{ selectedWishlist.capacity }} persons</p>
+                    <p v-if="selectedWishlist.additional_capacity_charges">Additional Charges: {{ formatPrice(selectedWishlist.additional_capacity_charges) }} php per {{ selectedWishlist.charge_unit }} person(s)</p>
+                    <p class="mt-2">Status: <span :class="{'text-green-600': selectedWishlist.package_status === 'Active', 'text-yellow-600': selectedWishlist.package_status === 'Pending', 'text-red-600': selectedWishlist.package_status === 'Cancelled'}">{{ selectedWishlist.package_status }}</span></p>
+                </div>
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
                     <p class="text-gray-700">Total Price</p>
                     <p>{{ formatPrice(selectedWishlist.total_price) }} php</p>
                 </div>
            
-                <!-- Section for Suppliers with Expand Button -->
+                <!-- Section for Suppliers -->
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl">
                     <p class="text-gray-700">Suppliers</p>
                     <button @click="showSuppliers = !showSuppliers" class="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                         {{ showSuppliers ? 'Hide Suppliers' : 'Show Suppliers' }}
                     </button>
                     <div v-if="showSuppliers" class="mt-2 overflow-y-auto max-h-64 space-y-2">
-                        <!-- Internal Suppliers -->
-                        <div v-for="(name, index) in selectedWishlist.internal_supplier_names" :key="'internal-'+index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
-                            <p class="font-semibold text-gray-800">Internal Supplier: {{ name }}</p>
-                            <p class="text-gray-600">Service: {{ selectedWishlist.internal_services[index] }}</p>
-                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.internal_service_prices[index]) }} php</p>
-                            <p class="text-gray-600">Remarks: {{ selectedWishlist.remarks[index] }}</p>
+                        <div v-if="selectedWishlist.suppliers && selectedWishlist.suppliers.length > 0">
+                            <div v-for="supplier in selectedWishlist.suppliers" :key="supplier.supplier_id" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
+                                <p class="font-semibold text-gray-800">{{ supplier.name }}</p>
+                                <p class="text-gray-600">Service: {{ supplier.service }}</p>
+                                <p class="text-gray-600">Price: {{ formatPrice(supplier.price) }} php</p>
+                                <p class="text-gray-600">Status: <span :class="{'text-green-600': supplier.status === 'Active', 'text-yellow-600': supplier.status === 'Pending', 'text-red-600': supplier.status === 'Cancelled'}">{{ supplier.status }}</span></p>
+                                <p v-if="supplier.remarks" class="text-gray-600">Remarks: {{ supplier.remarks }}</p>
+                            </div>
                         </div>
-
-                        <!-- External Suppliers -->
-                        <div v-for="(name, index) in selectedWishlist.external_supplier_names" :key="'external-'+index" class="p-4 border rounded-lg bg-gray-100 shadow-sm">
-                            <p class="font-semibold text-gray-800">External Supplier: {{ name }}</p>
-                            <p class="text-gray-600">Contact: {{ selectedWishlist.external_supplier_contacts[index] }}</p>
-                            <p class="text-gray-600">Price: {{ formatPrice(selectedWishlist.external_supplier_prices[index]) }} php</p>
-                            <p class="text-gray-600">Remarks: {{ selectedWishlist.remarks[index + selectedWishlist.internal_supplier_names.length] }}</p>
-                        </div>
+                        <p v-else class="text-gray-600">No suppliers selected</p>
                     </div>
                 </div>
 
@@ -249,6 +222,7 @@
                                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Type</th>
                                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Color</th>
                                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Price</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Status</th>
                                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Action</th>
                                         </tr>
                                     </thead>
@@ -258,6 +232,11 @@
                                             <td class="px-4 py-2 text-sm">{{ outfit.outfit_type }}</td>
                                             <td class="px-4 py-2 text-sm">{{ outfit.outfit_color }}</td>
                                             <td class="px-4 py-2 text-sm">{{ formatPrice(outfit.rent_price) }} php</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span :class="{'text-green-600': outfit.status === 'Active', 'text-yellow-600': outfit.status === 'Pending', 'text-red-600': outfit.status === 'Cancelled'}">
+                                                    {{ outfit.status }}
+                                                </span>
+                                            </td>
                                             <td class="px-4 py-2 text-sm">
                                                 <button 
                                                     @click="viewOutfitImage(outfit)"
@@ -276,9 +255,9 @@
                     <div v-else class="text-gray-600 text-sm">No outfit package selected.</div>
                 </div>
 
-                <!-- Section for Services -->
+                <!-- Section for Additional Services -->
                 <div class="bg-gray-300 w-full px-2 py-3 space-y-2 rounded-xl mt-4">
-                    <p class="text-gray-700 font-semibold">Services</p>
+                    <p class="text-gray-700 font-semibold">Additional Services</p>
                     <button @click="showAdditionalServices = !showAdditionalServices" class="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                         {{ showAdditionalServices ? 'Hide Services' : 'Show Services' }}
                     </button>
@@ -289,6 +268,8 @@
                                 <p class="font-semibold text-gray-800">{{ service.add_service_name }}</p>
                                 <p class="text-gray-600">{{ service.add_service_description }}</p>
                                 <p class="text-gray-600">Price: {{ formatPrice(service.add_service_price) }} php</p>
+                                <p class="text-gray-600">Status: <span :class="{'text-green-600': service.status === 'Active', 'text-yellow-600': service.status === 'Pending', 'text-red-600': service.status === 'Cancelled'}">{{ service.status }}</span></p>
+                                <p v-if="service.remarks" class="text-gray-600">Remarks: {{ service.remarks }}</p>
                             </div>
                         </div>
                         <p v-else class="text-gray-600">No additional services selected</p>
@@ -332,6 +313,8 @@
                     <p><span class="font-medium">Type:</span> {{ selectedOutfit.outfit_type }}</p>
                     <p><span class="font-medium">Color:</span> {{ selectedOutfit.outfit_color }}</p>
                     <p v-if="selectedOutfit.outfit_desc"><span class="font-medium">Description:</span> {{ selectedOutfit.outfit_desc }}</p>
+                    <p><span class="font-medium">Status:</span> <span :class="{'text-green-600': selectedOutfit.status === 'Active', 'text-yellow-600': selectedOutfit.status === 'Pending', 'text-red-600': selectedOutfit.status === 'Cancelled'}">{{ selectedOutfit.status }}</span></p>
+                    <p v-if="selectedOutfit.remarks"><span class="font-medium">Remarks:</span> {{ selectedOutfit.remarks }}</p>
                 </div>
             </div>
         </div>
@@ -353,139 +336,231 @@ import axios from 'axios';
     export default{
         data() {
         return {
-        events_navigation: true,
-        selectedWishlist: null,
-        selectedOutfit: null,
+            events_navigation: true,
+            selectedWishlist: null,
+            selectedOutfit: null,
+            activeNavButton: 'wishlist',
+            
+            // Display flags
+            displayWishlist: true,
+            displayEvents: false,
+            displayCompleted: false,
+            displayRated: false,
+            displayCanceled: false,
+            displayAll: false,
+            displayBookedWishlist: true,
+            displayBookedOutfits: false,
 
-        bookedWishlistDetails: false,
-        displayBookedOutfits: false,
-        
-        // booked outfits
-        displayBookedOutfits: false,
+            // Data arrays
+            bookedWishlist: [],
+            bookedOutfits: [],
 
-        //events navigation 
-        displayBookedWishlist: true,
-        displayCompleted: false,
-        displayRated: false,
-        displayCanceled: false,
-        displayAll: false,
-
-        bookedWishlist: [],
-        bookedOutfits: [],
-
-        showSuppliers: false,
-        showAdditionalServices: false,
+            // Modal toggles
+            showSuppliers: false,
+            showAdditionalServices: false,
         };
     },
+    computed: {
+        filteredWishlist() {
+            if (!this.bookedWishlist) return [];
+            
+            let filtered;
+            switch (this.activeNavButton) {
+                case 'wishlist':
+                    filtered = this.bookedWishlist.filter(item => item.event_status === 'Wishlist');
+                    break;
+                case 'events':
+                    filtered = this.bookedWishlist.filter(item => item.package_status === 'Active');
+                    break;
+                case 'completed':
+                    filtered = this.bookedWishlist.filter(item => item.package_status === 'Completed');
+                    break;
+                case 'rated':
+                    filtered = this.bookedWishlist.filter(item => item.package_status === 'Rated');
+                    break;
+                case 'canceled':
+                    filtered = this.bookedWishlist.filter(item => item.package_status === 'Cancelled');
+                    break;
+                case 'all':
+                default:
+                    filtered = this.bookedWishlist;
+            }
+            
+            return filtered;
+        }
+    },
     created() {
-    this.fetchBookedWishlist();
-    this.fetchBookedOutfits();
-  },
+        this.fetchBookedWishlist();
+        this.fetchBookedOutfits();
+    },
     methods: {
-         displayEventSection() {
+        setActiveNav(type) {
+            this.activeNavButton = type;
+            // Reset all display flags
+            this.displayWishlist = false;
+            this.displayEvents = false;
+            this.displayCompleted = false;
+            this.displayRated = false;
+            this.displayCanceled = false;
+            this.displayAll = false;
+
+            // Set the appropriate display flag
+            switch (type) {
+                case 'wishlist':
+                    this.displayWishlist = true;
+                    break;
+                case 'events':
+                    this.displayEvents = true;
+                    break;
+                case 'completed':
+                    this.displayCompleted = true;
+                    break;
+                case 'rated':
+                    this.displayRated = true;
+                    break;
+                case 'canceled':
+                    this.displayCanceled = true;
+                    break;
+                case 'all':
+                    this.displayAll = true;
+                    break;
+            }
+        },
+        
+        toggleWishlistDisplay() {
+            this.displayBookedWishlist = true;
+        },
+        
+        displayEventSection() {
             this.displayBookedWishlist = true;
             this.events_navigation = true;
             this.displayBookedOutfits = false;
-            },
-         displayOutfitsSection() {
+        },
+        
+        displayOutfitsSection() {
             this.displayBookedWishlist = false;
             this.events_navigation = false;
             this.displayBookedOutfits = true;
-            },
+        },
 
-            displayWishlist()
-            {
-                this.displayBookedWishlist = true;
-            },
-    
-            formatPrice(price) {
-                if (price === null || price === undefined || isNaN(price)) {
-                    return 'N/A'; // Return a fallback if price is invalid
+        formatPrice(price) {
+            if (price === null || price === undefined || isNaN(price)) {
+                return 'N/A'; // Return a fallback if price is invalid
+            }
+            // Round the price to 2 decimal places and format with commas
+            return parseFloat(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        },
+
+        async fetchBookedWishlist() {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    console.error('No access token found');
+                    this.$router.push('/login');
+                    return;
                 }
-                // Round the price to 2 decimal places and format with commas
-                return parseFloat(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 
-                },
-            
-        
-
-                async fetchBookedWishlist() {
-                    try {
-                    const token = localStorage.getItem('access_token');  // Assuming the JWT token is stored in localStorage
-                    const response = await axios.get('http://127.0.0.1:5000/wishlist', {
-                        headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`  // Send the JWT token
-                        },
-                        withCredentials: true  // Send cookies with the request if needed
-                    });
-                    this.bookedWishlist = response.data;  // Populate bookedWishlist array with data from API
-                    console.log("Fetched booked wishlist:", this.bookedWishlist);  // Log the data to verify structure
-                    } catch (error) {
-                    console.error('Error fetching booked wishlist:', error);
-                    }
-                },
-
-            async deleteWishlistItem(events_id) {
-                try {
-                    const token = localStorage.getItem('access_token');  // Get JWT token from localStorage
-
-                    // Send a DELETE request to the backend with the events_id
-                    const response = await axios.delete(`http://127.0.0.1:5000/booked_wishlist/${events_id}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,  // Send the JWT token
-                        }
-                    });
-
-                    if (response.status === 200) {
-                        // Remove the deleted item from the local wishlist array (events list)
-                        this.bookedWishlist = this.bookedWishlist.filter(item => item.events_id !== events_id);
-                        alert('Event item deleted successfully!');
-                        this.selectedWishlist = false;  // Optional: Clear the selected item if needed
-                    } else {
-                        alert('Failed to delete event item');
-                    }
-                } catch (error) {
-                    console.error('Error deleting event item:', error);
-                    alert('Error deleting event item');
-                }
-            },
-
-
-            displayWishlistDetails(item) {
-                // Ensure outfits are properly formatted
-                if (item.outfits && Array.isArray(item.outfits)) {
-                    this.selectedWishlist = item;
-                } else {
-                    // Create empty outfits array if none exists
-                    this.selectedWishlist = {
-                        ...item,
-                        outfits: []
-                    };
-                }
-            },
-            closeWishlistModal() {
-                this.selectedWishlist = null;
-                this.showSuppliers = false;
-                this.showAdditionalServices = false;
-            },
-
-
-            async fetchBookedOutfits() {
-                try {
-                    const token = localStorage.getItem('access_token');  // Get JWT token from localStorage
-                    const response = await axios.get('http://127.0.0.1:5000/booked-outfits', {
+                const response = await axios.get('http://127.0.0.1:5000/wishlist', {
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`  // Send the JWT token in the header
+                        'Authorization': `Bearer ${token}`
                     },
-                    withCredentials: true  // Send cookies with the request if needed
-                    });
-                    this.bookedOutfits = response.data;  // Populate bookedOutfits array with data from API
-                } catch (error) {
-                    console.error('Error fetching booked outfits:', error);
-                    alert('Error fetching booked outfits');
+                    withCredentials: true
+                });
+                
+                this.bookedWishlist = response.data;
+            } catch (error) {
+                console.error('Error fetching booked wishlist:', error);
+                if (error.response?.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('access_token');
+                    this.$router.push('/login');
+                } else if (error.response?.status === 422) {
+                    // Invalid data format
+                    console.error('Invalid data format:', error.response.data);
                 }
+            }
+        },
+
+        async deleteWishlistItem(events_id) {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    console.error('No access token found');
+                    this.$router.push('/login');
+                    return;
+                }
+
+                const response = await axios.delete(`http://127.0.0.1:5000/booked_wishlist/${events_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 200) {
+                    this.bookedWishlist = this.bookedWishlist.filter(item => item.events_id !== events_id);
+                    alert('Event item deleted successfully!');
+                    this.selectedWishlist = null;  // Changed from false to null to match the data type
+                    this.closeWishlistModal();
+                }
+            } catch (error) {
+                console.error('Error deleting event item:', error);
+                if (error.response?.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('access_token');
+                    this.$router.push('/login');
+                } else {
+                    alert('Failed to delete event item. Please try again.');
+                }
+            }
+        },
+
+        displayWishlistDetails(item) {
+            // Ensure outfits are properly formatted
+            if (item.outfits && Array.isArray(item.outfits)) {
+                this.selectedWishlist = item;
+            } else {
+                // Create empty outfits array if none exists
+                this.selectedWishlist = {
+                    ...item,
+                    outfits: []
+                };
+            }
+        },
+        closeWishlistModal() {
+            this.selectedWishlist = null;
+            this.showSuppliers = false;
+            this.showAdditionalServices = false;
+        },
+
+        async fetchBookedOutfits() {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    console.error('No access token found');
+                    this.$router.push('/login');
+                    return;
+                }
+
+                const response = await axios.get('http://127.0.0.1:5000/booked-outfits', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    withCredentials: true
+                });
+                this.bookedOutfits = response.data;
+            } catch (error) {
+                console.error('Error fetching booked outfits:', error);
+                if (error.response?.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('access_token');
+                    this.$router.push('/login');
+                } else if (error.response?.status === 422) {
+                    // Invalid data format
+                    console.error('Invalid data format:', error.response.data);
+                }
+            }
         },
         viewOutfitImage(outfit) {
             if (outfit && outfit.outfit_img) {

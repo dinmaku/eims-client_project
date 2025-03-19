@@ -56,17 +56,21 @@
           <li v-else>
             <div class="relative">
               <div class="flex items-center justify-start space-x-4" @click="toggleDrop">
-                <img class="w-9 h-9 rounded-full border-2 border-gray-50 bg-white cursor-pointer" src="/img/ID.jpg" alt="">
+                <img 
+                  class="w-9 h-9 rounded-full border-2 border-gray-50 bg-white cursor-pointer object-cover" 
+                  :src="profileImageUrl" 
+                  @error="handleImageError"
+                  alt="User Profile"
+                >
                 <div class="font-semibold text-gray-100 dark:text-white text-left">
-                  <div>Dean Mark</div>
+                  <div>{{ userFullName }}</div>
                 </div>
               </div>
               
               <!-- Drop down -->
               <div v-show="showDropDown" class="absolute right-[-50px] z-10 mt-3 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
                 <div class="py-1 text-left" role="none">
-                  <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Account settings</a>
-                  <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Customer Support</a>
+                  <a href="/user-profile" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Profile</a>
                   <a href="/booked-services" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">My Bookings</a>
                   <a href="/vendor-schedule" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200" role="menuitem" tabindex="-1">Booked Schedules</a>
                   <router-link to="/">
@@ -154,6 +158,7 @@
 
 <script>
 import LoginRegister from '../pages/login-register.vue';
+import axios from 'axios';
 
 export default {
   name: 'ClientNavigation',
@@ -167,6 +172,8 @@ export default {
       loggedIn:localStorage.getItem('loggedIn') === 'true',
       showDropDown: false,
       isDropdownVisible: false,
+      userProfile: null,
+      apiBaseUrl: 'http://127.0.0.1:5000'
     };
   },
   computed: {
@@ -174,21 +181,52 @@ export default {
       const route = this.$route.path;
       const isAttireCatalog = route === '/attire-catalog';
       const isBookedServices = route === '/booked-services';  // Check for /booked-services route
-      const isVendorSchedule = route === '/vendor-schedule';  // Check for /vendor-schedule route
+      const isVendorSchedule = route === '/vendor-schedule';
+      const isUserProfile = route === '/user-profile';
       const isScrolled = this.isScrolled || (isAttireCatalog && window.scrollY > 0);
 
       // Apply bg-black if on /booked-services, /vendor-schedule, or if scrolled or on /add-wishlist
-      return isBookedServices || isVendorSchedule || isScrolled || route === '/add-wishlist'
+      return isBookedServices || isVendorSchedule || isUserProfile || isScrolled || route === '/add-wishlist'
         ? 'bg-black bg-opacity-60'
         : 'bg-transparent';
+    },
+    userFullName() {
+      if (this.userProfile) {
+        return `${this.userProfile.firstname || ''} ${this.userProfile.lastname || ''}`.trim() || 'User';
+      }
+      return 'User';
+    },
+    profileImageUrl() {
+      // If the user has a profile image set
+      if (this.userProfile && this.userProfile.user_img) {
+        // Check if it's a full URL or just a path
+        if (this.userProfile.user_img.startsWith('http')) {
+          return this.userProfile.user_img;
+        } else {
+          // Add the API base URL to the relative path
+          return `${this.apiBaseUrl}${this.userProfile.user_img}`;
+        }
+      }
+      
+      // Default fallback
+      return '/default-profile.jpg';
     }
   },
   mounted() {
     window.addEventListener('scroll', this.handleScroll);
     this.loggedIn = localStorage.getItem('loggedIn') === 'true';
+    
+    // Fetch user profile if logged in
+    if (this.loggedIn) {
+      this.fetchUserProfile();
+    }
+    
+    // Listen for profile updates from the profile page
+    document.addEventListener('user-profile-updated', this.fetchUserProfile);
   },
   beforeUnmount() {
     window.removeEventListener('scroll', this.handleScroll);
+    document.removeEventListener('user-profile-updated', this.fetchUserProfile);
   },
   methods: {
     toggleNavbar() {
@@ -208,6 +246,9 @@ export default {
       localStorage.setItem('loggedIn', 'true'); 
       this.showDropDown = false;  // Ensure dropdown is hidden after login
       this.loginModalForm = false;  // Close login modal
+      
+      // Fetch user profile after successful login
+      this.fetchUserProfile();
     },
     toggleDrop() {
       this.showDropDown = !this.showDropDown;
@@ -215,12 +256,42 @@ export default {
     handleLogout() {
       this.loggedIn = false; // Update Vue component state
       localStorage.removeItem('loggedIn'); // Remove login status from localStorage
+      localStorage.removeItem('access_token'); // Remove the JWT token
+      this.userProfile = null; // Clear user profile data
       this.showDropDown = false; // Close dropdown
       this.$router.push('/'); // Optionally redirect to home or login page
-      },
-      toggleServices() {
+    },
+    toggleServices() {
       this.isDropdownVisible = !this.isDropdownVisible;
     },
+    async fetchUserProfile() {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          console.error('No access token found');
+          return;
+        }
+        
+        const response = await axios.get(`${this.apiBaseUrl}/api/user/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data.status === 'success') {
+          this.userProfile = response.data.data;
+          console.log('Navigation: Profile data loaded:', this.userProfile);
+        } else {
+          console.error('Failed to load profile:', response.data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching profile in navigation:', error);
+      }
+    },
+    handleImageError(e) {
+      console.error('Navigation: Image failed to load:', e.target.src);
+      e.target.src = '/default-profile.jpg';
+    }
   },
 };
 </script>

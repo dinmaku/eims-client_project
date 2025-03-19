@@ -1,10 +1,8 @@
 <template>
     <!-- Login Form -->
-    <form v-if="loginForm" @submit.prevent="handleLogin" class="flex justify-center items-center fixed inset-0 bg-gray-800 bg-opacity-70">
+    <form v-if="loginForm" @click.self="closeLoginForm" @submit.prevent="handleLogin" class="flex justify-center items-center fixed inset-0 bg-gray-800 bg-opacity-70">
         <div class="bg-white w-full sm:w-1/3 h-4/5 p-7 rounded-lg shadow-xl overflow-y-hidden mr-2">
-            <div class="flex justify-end">
-                <button @click="closeLoginForm" class="text-gray-600 text-md transition-transform duration-300 transform hover:scale-110 hover:bg-gray-300 hover:rounded-full px-2">X</button>
-            </div>
+            
             <div class="flex flex-col justify-center items-center space-y-3 mt-5">
                 <h1 class="text-3xl font-amaticBold font-extrabold text-blue-900">Sign In</h1>
                 <p class="font-raleway font-medium text-sm tracking-wide text-gray-500 mt-2">Enter your email and password</p>
@@ -42,11 +40,8 @@
     </form>
 
     <!-- Register Form -->
-    <form v-if="registerForm" @submit.prevent="handleRegister" class="flex justify-center items-center fixed inset-0 bg-gray-800 bg-opacity-70">
+    <form v-if="registerForm" @click.self="closeRegisterForm" @submit.prevent="handleRegister" class="flex justify-center items-center fixed inset-0 bg-gray-800 bg-opacity-70">
         <div class="bg-white w-full sm:w-[45%] h-[98%] p-7 rounded-lg shadow-xl overflow-y-auto mr-2">
-            <div class="flex justify-end">
-                <button @click="closeRegisterForm" class="text-gray-600 text-md transition-transform duration-300 transform hover:scale-110 hover:bg-gray-300 hover:rounded-full px-2">X</button>
-            </div>
             <div class="flex flex-col justify-start items-start space-y-1">
                 <h1 class="text-2xl font-amaticBold font-extrabold text-blue-900">Create your account</h1>
                 <div class="flex justify-center items-center mt-4 space-x-1">
@@ -150,6 +145,7 @@ export default {
     },
     showLoginForm() {
       this.registerForm = false;
+      this.$emit('update:loginForm', true);
     },
     async handleLogin() {
           try {

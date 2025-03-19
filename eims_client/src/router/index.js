@@ -8,6 +8,7 @@ import AttireCatalog from '../pages/attire-catalog.vue';
 import BookedServices from '../pages/booked_services.vue';
 import VendorSchedule from '../pages/vendor-schedule.vue';
 import SuppliersProfile from '../pages/suppliers_profile.vue';
+import UserProfile from '../pages/user_profile.vue';
 
 
 const routes = [
@@ -77,6 +78,14 @@ const routes = [
         component: SuppliersProfile,
         meta: {
           title: 'Suppliers Profile',
+        },
+      },
+      {
+        path: 'user-profile',
+        name: 'User Profile',
+        component: UserProfile,
+        meta: {
+          title: 'User Profile',
         },
       },
       
