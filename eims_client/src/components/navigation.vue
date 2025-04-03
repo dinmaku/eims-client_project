@@ -54,7 +54,7 @@
           
           <!-- Profile Dropdown when logged in -->
           <li v-else>
-            <div class="relative">
+            <div class="relative" >
               <div class="flex items-center justify-start space-x-4" @click="toggleDrop">
                 <img 
                   class="w-9 h-9 rounded-full border-2 border-gray-50 bg-white cursor-pointer object-cover" 
@@ -183,10 +183,12 @@ export default {
       const isBookedServices = route === '/booked-services';  // Check for /booked-services route
       const isVendorSchedule = route === '/vendor-schedule';
       const isUserProfile = route === '/user-profile';
+      const isSuppliersProfile = route === '/suppliers-profile';
+      const isPackageDeal = route === '/package-deal';
       const isScrolled = this.isScrolled || (isAttireCatalog && window.scrollY > 0);
 
       // Apply bg-black if on /booked-services, /vendor-schedule, or if scrolled or on /add-wishlist
-      return isBookedServices || isVendorSchedule || isUserProfile || isScrolled || route === '/add-wishlist'
+      return isBookedServices || isVendorSchedule || isUserProfile || isScrolled || route === '/add-wishlist' || isSuppliersProfile || isPackageDeal || isAttireCatalog
         ? 'bg-black bg-opacity-60'
         : 'bg-transparent';
     },

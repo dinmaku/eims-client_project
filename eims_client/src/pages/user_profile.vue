@@ -56,13 +56,71 @@
           </div>
 
           <!-- Edit/View Toggle -->
-          <div class="text-center mb-6">
+          <div class="text-center mb-6 space-x-4">
             <button 
               @click="toggleEditMode" 
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               {{ editMode ? 'Cancel' : 'Edit Profile' }}
             </button>
+            <button 
+              @click="togglePasswordMode" 
+              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              {{ passwordMode ? 'Cancel' : 'Change Password' }}
+            </button>
+          </div>
+
+          <!-- Change Password Form -->
+          <div v-if="passwordMode" class="mt-8 mb-2">
+            <form @submit.prevent="changePassword" class="space-y-6 max-w-md mx-auto">
+              <div>
+                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input 
+                  type="password" 
+                  id="currentPassword" 
+                  v-model="passwordForm.currentPassword" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input 
+                  type="password" 
+                  id="newPassword" 
+                  v-model="passwordForm.newPassword" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <input 
+                  type="password" 
+                  id="confirmPassword" 
+                  v-model="passwordForm.confirmPassword" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div class="flex justify-end space-x-3">
+                <button 
+                  type="button" 
+                  @click="passwordMode = false" 
+                  class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  :disabled="changingPassword"
+                >
+                  {{ changingPassword ? 'Changing Password...' : 'Change Password' }}
+                </button>
+              </div>
+            </form>
           </div>
 
           <!-- View Mode -->
@@ -182,11 +240,18 @@ export default {
       error: null,
       successMessage: null,
       editMode: false,
+      passwordMode: false,
       saving: false,
+      changingPassword: false,
       previewImage: null,
       allowedFileTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
       maxFileSize: 5 * 1024 * 1024, // 5MB
-      apiBaseUrl: 'http://127.0.0.1:5000'
+      apiBaseUrl: 'http://127.0.0.1:5000',
+      passwordForm: {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }
     };
   },
   computed: {
@@ -362,6 +427,17 @@ export default {
       this.editMode = !this.editMode;
     },
     
+    togglePasswordMode() {
+      this.passwordMode = !this.passwordMode;
+      if (!this.passwordMode) {
+        this.passwordForm = {
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        };
+      }
+    },
+    
     async saveProfile() {
       this.saving = true;
       try {
@@ -399,6 +475,50 @@ export default {
         this.error = error.response?.data?.message || 'An error occurred while updating profile';
       } finally {
         this.saving = false;
+      }
+    },
+
+    async changePassword() {
+      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+        this.error = 'New passwords do not match';
+        return;
+      }
+
+      this.changingPassword = true;
+      this.error = null;
+      this.successMessage = null;
+
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.post(
+          `${this.apiBaseUrl}/api/user/change-password`,
+          {
+            current_password: this.passwordForm.currentPassword,
+            new_password: this.passwordForm.newPassword
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.data.status === 'success') {
+          this.successMessage = 'Password changed successfully';
+          this.passwordMode = false;
+          this.passwordForm = {
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          };
+        } else {
+          this.error = response.data.message || 'Failed to change password';
+        }
+      } catch (error) {
+        console.error('Error changing password:', error);
+        this.error = error.response?.data?.message || 'An error occurred while changing password';
+      } finally {
+        this.changingPassword = false;
       }
     }
   }

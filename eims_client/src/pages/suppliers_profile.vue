@@ -1,7 +1,44 @@
 <template>
-  <div class="min-h-screen bg-gray-500 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto mt-20">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Our Suppliers</h1>
+      
+      <!-- Filter Button and Dropdown -->
+      <div class="filter-container flex items-center mb-6 relative">
+        <button 
+          @click.stop="toggleFilter" 
+          class="flex items-center hover:bg-gray-400 p-2 rounded-lg bg-gray-600 text-white"
+        >
+          <i class="fas fa-filter h-5 w-5"></i>
+          <span class="ml-2 text-md font-medium">Filters</span>
+        </button>
+        
+        <!-- Filter Dropdown -->
+        <div 
+          v-if="showFilter" 
+          @click.stop
+          class="absolute top-12 left-0 bg-white shadow-lg rounded-lg p-4 z-[1] min-w-[200px]"
+        >
+          <div class="space-y-2">
+            <button 
+              @click="filterByService('all')"
+              :class="['w-full text-left px-4 py-2 rounded-lg', 
+                selectedService === 'all' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100']"
+            >
+              All Services
+            </button>
+            <button 
+              v-for="service in uniqueServices" 
+              :key="service"
+              @click="filterByService(service)"
+              :class="['w-full text-left px-4 py-2 rounded-lg', 
+                selectedService === service ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100']"
+            >
+              {{ service || 'Uncategorized' }}
+            </button>
+          </div>
+        </div>
+      </div>
       
       <!-- Error Message -->
       <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -58,13 +95,17 @@
                 </tbody>
               </table>
 
-              <div class="text-center my-3">
+              <!-- Social Media Icons -->
+              <div class="text-center my-3 flex justify-center space-x-4">
                 <a 
-                  class="text-xs text-indigo-500 italic hover:underline hover:text-indigo-600 font-medium" 
-                  href="#"
-                  @click.prevent="viewSupplierDetails(supplier)"
+                  v-for="social in supplier.social_media" 
+                  :key="social.platform"
+                  :href="getSocialUrl(social.platform, social.handle)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-gray-600 hover:text-indigo-600 transition-colors duration-200"
                 >
-                  View Profile
+                  <i :class="getSocialIcon(social.platform)" class="text-xl"></i>
                 </a>
               </div>
 
@@ -97,20 +138,45 @@ export default {
   data() {
     return {
       suppliers: [],
-      error: null
+      allSuppliers: [], // Store all suppliers
+      error: null,
+      showFilter: false,
+      selectedService: 'all'
     };
   },
+  computed: {
+    uniqueServices() {
+      // Include null/undefined services as 'Uncategorized'
+      const services = this.allSuppliers.map(supplier => supplier.service || 'Uncategorized');
+      return [...new Set(services)].sort();
+    }
+  },
   methods: {
+    toggleFilter() {
+      this.showFilter = !this.showFilter;
+    },
+    filterByService(service) {
+      this.selectedService = service;
+      if (service === 'all') {
+        this.suppliers = [...this.allSuppliers];
+      } else if (service === 'Uncategorized') {
+        this.suppliers = this.allSuppliers.filter(supplier => !supplier.service);
+      } else {
+        this.suppliers = this.allSuppliers.filter(supplier => supplier.service === service);
+      }
+      this.showFilter = false;
+    },
     getSocialIcon(platform) {
       const icons = {
-        'facebook': '/img/facebook.png',
-        'instagram': '/img/instagram-black.png',
-        'twitter': '/img/twitter.png',
-        'linkedin': '/img/linkedin.png',
-        'youtube': '/img/youtube.png',
-        'pinterest': '/img/pinterest.png'
+        'facebook': 'fab fa-facebook',
+        'instagram': 'fab fa-instagram',
+        'twitter': 'fab fa-twitter',
+        'linkedin': 'fab fa-linkedin',
+        'youtube': 'fab fa-youtube',
+        'tiktok': 'fab fa-tiktok',
+        'pinterest': 'fab fa-pinterest'
       };
-      return icons[platform.toLowerCase()] || '/img/link.png';
+      return icons[platform.toLowerCase()] || 'fas fa-link';
     },
     getSocialUrl(platform, handle) {
       const baseUrls = {
@@ -132,7 +198,8 @@ export default {
         const response = await axios.get('/api/suppliers');
         console.log('API Response:', response.data);
         if (response.data && response.data.status === 'success') {
-          this.suppliers = response.data.data;
+          this.allSuppliers = response.data.data;
+          this.suppliers = [...this.allSuppliers];
           this.error = null;
         } else {
           this.error = response.data?.message || 'Failed to fetch suppliers';
@@ -146,6 +213,18 @@ export default {
   },
   async created() {
     await this.fetchSuppliers();
+  },
+  mounted() {
+    // Close filter dropdown when clicking outside
+    document.addEventListener('click', () => {
+      this.showFilter = false;
+    });
+  },
+  beforeUnmount() {
+    // Clean up event listener
+    document.removeEventListener('click', () => {
+      this.showFilter = false;
+    });
   }
 };
 </script>
@@ -168,5 +247,19 @@ export default {
 
 .card:hover .card-image {
   transform: scale(1.05);
+}
+
+/* Add these new styles */
+.filter-container {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style>

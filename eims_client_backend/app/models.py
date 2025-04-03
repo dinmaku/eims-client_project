@@ -1466,3 +1466,45 @@ def get_user_profile_by_id(userid):
     finally:
         cursor.close()
         conn.close()
+
+def change_password(user_id, current_password, new_password):
+    """
+    Changes the user's password after verifying the current password.
+    :param user_id: ID of the user
+    :param current_password: Current password to verify
+    :param new_password: New password to set
+    :return: Tuple (success, message)
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    current_password_hash = hash_password(current_password)
+    new_password_hash = hash_password(new_password)
+
+    try:
+        # First verify the current password
+        cursor.execute(
+            "SELECT password FROM users WHERE userid = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        
+        if not user:
+            return False, "User not found"
+            
+        if user[0] != current_password_hash:
+            return False, "Current password is incorrect"
+            
+        # Update the password
+        cursor.execute(
+            "UPDATE users SET password = %s WHERE userid = %s",
+            (new_password_hash, user_id)
+        )
+        conn.commit()
+        return True, "Password changed successfully"
+        
+    except Exception as e:
+        print(f"Error in change_password: {str(e)}")
+        return False, "An error occurred while changing password"
+    finally:
+        cursor.close()
+        conn.close()

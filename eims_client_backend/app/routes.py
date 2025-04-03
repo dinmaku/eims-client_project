@@ -8,7 +8,8 @@ from .models import (
     get_package_details_by_id, get_booked_outfits_by_user, get_packages, 
     get_available_suppliers, get_available_venues, get_available_gown_packages, 
     get_event_types, get_all_additional_services, get_booked_schedules, add_event_item,
-    create_wishlist_package, initialize_test_suppliers, get_user_profile_by_id
+    create_wishlist_package, initialize_test_suppliers, get_user_profile_by_id,
+    change_password, get_db_connection
 )
 import logging
 import jwt
@@ -631,3 +632,164 @@ def init_routes(app):
                 'status': 'error',
                 'message': str(e)
             }), 500
+
+    @app.route('/api/user/change-password', methods=['POST'])
+    @jwt_required()
+    def change_password_route():
+        try:
+            data = request.json
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+
+            if not current_password or not new_password:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Current password and new password are required'
+                }), 400
+
+            # Get user ID from the JWT token
+            email = get_jwt_identity()
+            user_id = get_user_id_by_email(email)
+
+            if not user_id:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'User not found'
+                }), 404
+
+            # Attempt to change password
+            success, message = change_password(user_id, current_password, new_password)
+
+            if success:
+                return jsonify({
+                    'status': 'success',
+                    'message': message
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': message
+                }), 400
+
+        except Exception as e:
+            print(f"Error in change_password_route: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': 'An error occurred while changing password'
+            }), 500
+
+    @app.route('/api/user/change-password', methods=['OPTIONS'])
+    def change_password_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    @app.route('/api/packages', methods=['GET'])
+    def get_packages():
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Get all packages with related information
+            cursor.execute("""
+                SELECT 
+                    ep.package_id,
+                    ep.package_name,
+                    ep.capacity,
+                    ep.description,
+                    ep.additional_capacity_charges,
+                    ep.charge_unit,
+                    ep.total_price,
+                    COALESCE(ep.status, 'active') as status,
+                    v.venue_name,
+                    v.location,
+                    v.venue_price,
+                    v.venue_capacity,
+                    v.description as venue_description,
+                    et.event_type_name,
+                    gp.gown_package_name,
+                    gp.gown_package_price,
+                    gp.description as gown_package_description,
+                    v.image as venue_image
+                FROM event_packages ep
+                LEFT JOIN venues v ON ep.venue_id = v.venue_id
+                LEFT JOIN event_type et ON ep.event_type_id = et.event_type_id
+                LEFT JOIN gown_package gp ON ep.gown_package_id = gp.gown_package_id
+                WHERE ep.status IS NULL OR LOWER(ep.status) = 'active'
+                ORDER BY ep.package_id DESC
+            """)
+            
+            packages = cursor.fetchall()
+            print(f"Found {len(packages)} packages")  # Debug log
+            
+            # Format the results
+            formatted_packages = []
+            for package in packages:
+                # Convert absolute image path to relative path
+                venue_image = package[17]  # venue_image is at index 17
+                if venue_image:
+                    # Extract just the filename from the full path
+                    venue_image = venue_image.split('\\')[-1]
+                    # Convert to relative path
+                    venue_image = f'/img/venues-img/{venue_image}'
+                
+                formatted_packages.append({
+                    'package_id': package[0],
+                    'package_name': package[1],
+                    'capacity': package[2],
+                    'description': package[3],
+                    'additional_capacity_charges': float(package[4]) if package[4] else 0,
+                    'charge_unit': package[5],
+                    'total_price': float(package[6]) if package[6] else 0,
+                    'status': package[7],
+                    'venue': {
+                        'name': package[8],
+                        'location': package[9],
+                        'price': float(package[10]) if package[10] else 0,
+                        'capacity': package[11],
+                        'description': package[12],
+                        'image': venue_image
+                    } if package[8] else None,
+                    'event_type': package[13] if package[13] else None,
+                    'gown_package': {
+                        'name': package[14],
+                        'price': float(package[15]) if package[15] else 0,
+                        'description': package[16]
+                    } if package[14] else None
+                })
+            
+            cursor.close()
+            conn.close()
+            
+            response = jsonify({
+                'status': 'success',
+                'data': formatted_packages
+            })
+            
+            # Add CORS headers
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            
+            return response
+            
+        except Exception as e:
+            print(f"Error fetching packages: {str(e)}")
+            response = jsonify({
+                'status': 'error',
+                'message': str(e)
+            })
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 500
+
+    @app.route('/api/packages', methods=['OPTIONS'])
+    def packages_options():
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
